@@ -4,11 +4,13 @@ import {
   update, hasProfile, resetAll, exportText, importText, downloadBackup, isStorageAvailable,
 } from './storage.js';
 import {
-  $, showScreen, backTarget, updateHUD, toast, modal, renderHome, renderShop, renderArmory,
-  renderColorPicker, refreshStorageWarning, answerInput,
+  $, showScreen, backTarget, getCurrentScreen, updateHUD, toast, modal, renderHome,
+  renderShop, renderArmory, renderColorPicker, refreshStorageWarning, answerInput,
 } from './ui.js';
 import { mountAvatar, COLOR_CHOICES } from './avatar.js';
-import { startBattle, bindBattleButtons } from './battle.js';
+import { startBattle, bindBattleButtons, isBattleActive, abandonBattle } from './battle.js';
+import { renderMap } from './map.js';
+import { openLightning, stopLightning } from './lightning.js';
 
 /* ============================ יצירת לוחם ============================ */
 
@@ -70,14 +72,35 @@ function goHome() {
   showScreen('home');
 }
 
+function openMap() {
+  renderMap((topic) => startBattle({ topic }));
+  showScreen('map');
+}
+
 function initNav() {
-  $('#btn-back').addEventListener('click', () => {
+  $('#btn-back').addEventListener('click', async () => {
+    // יציאה מקרב באמצע - שואלים קודם
+    if (getCurrentScreen() === 'battle' && isBattleActive()) {
+      const ok = await modal({
+        title: 'לצאת מהקרב?',
+        body: 'התשובות שכבר ענית עליהן נשמרו, והמטבעות שלך נשארים. אפשר להתחיל קרב חדש בכל רגע.',
+        okText: 'יציאה מהקרב',
+        cancelText: 'ממשיכים בקרב',
+      });
+      if (!ok) return;
+      abandonBattle();
+      goHome();
+      return;
+    }
+    if (getCurrentScreen() === 'lightning') stopLightning();
+
     const t = backTarget();
     if (t === 'home') goHome();
     else showScreen(t);
   });
 
-  $('#btn-battle').addEventListener('click', () => startBattle());
+  $('#btn-battle').addEventListener('click', openMap);
+  $('#btn-lightning').addEventListener('click', () => openLightning());
 
   $('#btn-shop').addEventListener('click', () => {
     renderShop(() => renderHome());

@@ -15,15 +15,20 @@ export const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const SCREEN_TITLES = {
   onboarding: 'לוחמי דרקונים',
   home: 'לוחמי דרקונים',
+  map: 'מפת העולם',
   battle: 'קרב',
   summary: 'סיכום הקרב',
   shop: 'חנות',
   armory: 'חדר הנשק',
   settings: 'הגדרות וגיבוי',
+  lightning: 'מתקפת ברק',
 };
 
 let currentScreen = null;
-const backTargets = { shop: 'home', armory: 'home', settings: 'home', summary: 'home', battle: 'home' };
+const backTargets = {
+  shop: 'home', armory: 'home', settings: 'home', summary: 'home',
+  battle: 'home', map: 'home', lightning: 'home',
+};
 
 export function showScreen(name) {
   $$('.screen').forEach((s) => { s.hidden = true; });
@@ -34,7 +39,7 @@ export function showScreen(name) {
   const bar = $('#topbar');
   bar.hidden = name === 'onboarding';
   $('#topbar-title').textContent = SCREEN_TITLES[name] || 'לוחמי דרקונים';
-  $('#btn-back').hidden = !backTargets[name] || name === 'battle';
+  $('#btn-back').hidden = !backTargets[name];
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'auto' : 'auto' });
   updateHUD();
 }

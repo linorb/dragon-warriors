@@ -111,6 +111,46 @@ export function pushToReview(question) {
   });
 }
 
+/** הסרה מתור החזרה אחרי שהנושא נפתר נכון */
+export function clearFromReview(type) {
+  update((s) => {
+    s.reviewQueue = s.reviewQueue.filter((r) => r.type !== type);
+  });
+}
+
+export function reviewCount() {
+  return getState().reviewQueue.length;
+}
+
+/**
+ * כוכבים לאזור במפה (0-3), לפי כמות תרגול ודיוק בניסיון ראשון.
+ */
+export function regionStars(topicId) {
+  const t = getState().stats.byTopic[topicId];
+  if (!t || !t.answered) return 0;
+  const acc = t.firstTry / t.answered;
+  if (t.answered >= 15 && acc >= 0.8) return 3;
+  if (t.answered >= 8 && acc >= 0.6) return 2;
+  if (t.answered >= 3) return 1;
+  return t.answered >= 1 ? 1 : 0;
+}
+
+/** שיא אישי במשחק "מתקפת ברק". מחזיר true אם נשבר שיא */
+export function saveLightningBest(score) {
+  let isRecord = false;
+  update((s) => {
+    if (score > (s.records.lightningBest || 0)) {
+      s.records.lightningBest = score;
+      isRecord = true;
+    }
+  });
+  return isRecord;
+}
+
+export function lightningBest() {
+  return getState().records.lightningBest || 0;
+}
+
 /** דיוק לפי נושא, באחוזים */
 export function accuracyByTopic() {
   const s = getState();

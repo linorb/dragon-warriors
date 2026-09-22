@@ -10,7 +10,11 @@ const check = (name, cond, detail = '') => {
 /* ---------- סביבת דפדפן מדומה מינימלית ---------- */
 const store = new Map();
 const noop = () => {};
-const fakeEl = { innerHTML: '', textContent: '', hidden: false, style: {}, classList: { add: noop, remove: noop }, addEventListener: noop, focus: noop, select: noop };
+const fakeEl = {
+  innerHTML: '', textContent: '', hidden: false, style: {}, value: '',
+  classList: { add: noop, remove: noop }, addEventListener: noop, focus: noop, select: noop,
+  querySelector: () => null, querySelectorAll: () => [],
+};
 globalThis.window = {
   localStorage: {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
@@ -31,7 +35,8 @@ globalThis.document = {
 
 /* ---------- ייבוא כל המודולים ---------- */
 const mods = {};
-for (const name of ['util', 'storage', 'progress', 'questions', 'avatar', 'monsters', 'shop', 'ui', 'battle', 'main']) {
+for (const name of ['util', 'exprtokens', 'storage', 'progress', 'questions', 'avatar', 'monsters',
+  'shop', 'qui', 'ui', 'battle', 'map', 'lightning', 'main']) {
   try {
     mods[name] = await import(`../js/${name}.js`);
     check(`נטען המודול ${name}.js`, true);
@@ -154,6 +159,72 @@ const { CATALOG, SLOTS, TIERS } = mods.shop;
   check('רצף יומי מתחיל ב-1', streak.streak === 1 && streak.isNewDay === true);
   const same = p.touchDailyStreak();
   check('אותו יום לא מעלה את הרצף', same.isNewDay === false && same.bonus === 0);
+}
+
+/* ---------- רכיבי הממשק של סוגי השאלות ---------- */
+{
+  const { createQuestionUI, SUPPORTED_UIS } = mods.qui;
+  const { GENERATORS, TEACHER_QUESTIONS } = mods.questions;
+
+  const usedUis = new Set();
+  for (const g of GENERATORS) for (let i = 0; i < 20; i++) usedUis.add(g.gen().ui);
+  for (const f of TEACHER_QUESTIONS) usedUis.add(f().ui);
+
+  check('לכל סוג שאלה יש רכיב ממשק', [...usedUis].every((u) => SUPPORTED_UIS.includes(u)),
+    [...usedUis].filter((u) => !SUPPORTED_UIS.includes(u)).join(','));
+
+  const ctx = {
+    keypad: { value: () => null, setEnabled: noop, reset: noop },
+    canRead: false, speak: noop, toast: noop, setKeypad: noop, verdict: noop,
+  };
+
+  let componentsOk = true;
+  let detail = '';
+  const samples = [...GENERATORS.map((g) => g.gen()), ...TEACHER_QUESTIONS.map((f) => f())];
+  for (const q of samples) {
+    try {
+      const c = createQuestionUI(q, ctx);
+      if (typeof c.mount !== 'function' || typeof c.submit !== 'function' || typeof c.lock !== 'function') {
+        componentsOk = false; detail = `${q.type}: חסרה פונקציה`;
+      }
+      const host = { ...fakeEl, querySelectorAll: () => [], querySelector: () => null };
+      c.mount(host);
+      if (!host.innerHTML || host.innerHTML.length < 10) { componentsOk = false; detail = `${q.type}: לא צויר`; }
+      const v = c.submit();
+      if (!['incomplete', 'wrong', 'correct', 'progress'].includes(v.status)) {
+        componentsOk = false; detail = `${q.type}: פסק דין לא מוכר (${v.status})`;
+      }
+      c.lock();
+    } catch (e) {
+      componentsOk = false;
+      detail = `${q.type}: ${e.message}`;
+    }
+  }
+  check(`כל ${samples.length} סוגי השאלות נטענים, מציירים ומגיבים`, componentsOk, detail);
+}
+
+/* ---------- כוכבים במפה ותור חזרה ---------- */
+{
+  const storage = mods.storage;
+  const p = mods.progress;
+  storage.resetAll();
+
+  check('אזור שלא שוחק בו - 0 כוכבים', p.regionStars('mult_table') === 0);
+  storage.update((s) => { s.stats.byTopic.mult_table = { answered: 4, correct: 3, firstTry: 3, wrong: 1 }; });
+  check('אחרי תרגול ראשוני - כוכב', p.regionStars('mult_table') === 1);
+  storage.update((s) => { s.stats.byTopic.mult_table = { answered: 10, correct: 8, firstTry: 7, wrong: 3 }; });
+  check('דיוק טוב - שני כוכבים', p.regionStars('mult_table') === 2);
+  storage.update((s) => { s.stats.byTopic.mult_table = { answered: 20, correct: 18, firstTry: 17, wrong: 3 }; });
+  check('שליטה מלאה - שלושה כוכבים', p.regionStars('mult_table') === 3);
+
+  p.pushToReview({ type: 'add4', topic: 'add_sub' });
+  check('שאלה נכנסה לתור החזרה', p.reviewCount() === 1);
+  p.clearFromReview('add4');
+  check('שאלה יוצאת מהתור אחרי שנפתרה', p.reviewCount() === 0);
+
+  check('שיא מתקפת ברק מתחיל ב-0', p.lightningBest() === 0);
+  check('שיא חדש נשמר', p.saveLightningBest(14) === true && p.lightningBest() === 14);
+  check('תוצאה נמוכה לא דורסת שיא', p.saveLightningBest(9) === false && p.lightningBest() === 14);
 }
 
 /* ---------- סיכום ---------- */

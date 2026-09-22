@@ -76,6 +76,9 @@
           <button id="btn-battle" class="btn btn-primary btn-xl" type="button">
             <span class="btn-emoji">⚔️</span> יוצאים לקרב!
           </button>
+          <button id="btn-lightning" class="btn btn-lightning btn-xl" type="button">
+            <span class="btn-emoji">⚡</span> מתקפת ברק
+          </button>
           <button id="btn-shop" class="btn btn-secondary btn-xl" type="button">
             <span class="btn-emoji">🛒</span> חנות
           </button>
@@ -92,6 +95,20 @@
           <div id="home-progress" class="progress-note"></div>
         </div>
       </div>
+    </section>
+
+    <!-- ===== מפת העולם ===== -->
+    <section id="screen-map" class="screen" hidden>
+      <div class="map-head">
+        <h2 class="title-mid">מפת העולם</h2>
+        <p class="subtitle">בוחרים אזור ויוצאים לקרב. כל אזור הוא נושא אחר במבחן.</p>
+      </div>
+      <div id="map-body"></div>
+    </section>
+
+    <!-- ===== מתקפת ברק ===== -->
+    <section id="screen-lightning" class="screen" hidden>
+      <div id="lightning-body"></div>
     </section>
 
     <!-- ===== מסך קרב ===== -->
@@ -117,7 +134,7 @@
       </div>
 
       <div class="answer-area">
-        <div class="answer-row">
+        <div class="answer-row" id="answer-row">
           <div id="answer-display" class="answer-display" dir="ltr"><span class="placeholder">?</span></div>
           <span id="answer-unit" class="answer-unit"></span>
         </div>

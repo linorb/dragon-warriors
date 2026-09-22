@@ -1,15 +1,15 @@
-﻿// battle.js - לולאת הקרב: 5 שאלות מול מפלצת, מטבעות, רמזים ופתרון מלא
+// battle.js - לולאת הקרב: 5 שאלות מול מפלצת, מטבעות, רמזים ופתרון מלא
 
-import { buildBattle } from './questions.js';
+import { buildBattle, TOPICS } from './questions.js';
 import { randomMonster } from './monsters.js';
-import { TOPICS } from './questions.js';
 import { getState } from './storage.js';
 import { mountAvatar } from './avatar.js';
+import { createQuestionUI } from './qui.js';
 import {
   $, showScreen, toast, answerInput, updateHUD, speak, canSpeak, celebrateLevelUp,
 } from './ui.js';
 import {
-  REWARDS, addCoins, addXp, recordAnswer, pushToReview, touchDailyStreak,
+  REWARDS, addCoins, addXp, recordAnswer, pushToReview, clearFromReview, touchDailyStreak,
   bumpSessions, markPerfect, dragonStageFor,
 } from './progress.js';
 import { fmt, esc, wrapMath } from './util.js';
@@ -18,70 +18,6 @@ const QUESTIONS_PER_BATTLE = 5;
 const MONSTER_MAX_HP = 100;
 
 let battle = null;
-
-/* ============================ ציור השאלה ============================ */
-
-function renderExpr(q) {
-  const body = esc(q.expr).replace(/\?/g, '<span class="blank">?</span>');
-  const dir = q.exprRtl ? 'rtl' : 'ltr';
-  const cls = q.exprRtl ? 'expr expr-big expr-rtl' : 'expr expr-big';
-  return `<div class="${cls}" dir="${dir}">${body}</div>`;
-}
-
-function renderMission(q) {
-  const story = esc(q.story).replace(/\[\[(.+?)\]\]/g, '<span class="key-num">$1</span>');
-  const readBtn = canSpeak() ? `<button class="read-btn" type="button" id="btn-read">🔊 הקראה</button>` : '';
-  return `
-    <div class="mission-card">
-      <div class="mission-head">📜 משימה</div>
-      <div>${story}</div>
-      ${readBtn}
-    </div>
-    <textarea class="scratchpad" id="scratchpad" placeholder="מקום לחישובים..." aria-label="טיוטה לחישובים"></textarea>`;
-}
-
-function renderQuestion() {
-  const q = battle.questions[battle.index];
-  battle.attempts = 0;
-  battle.hintShown = false;
-
-  const topicName = TOPICS[q.topic] ? TOPICS[q.topic].name : '';
-  $('#q-topic').textContent = `שאלה ${battle.index + 1} מתוך ${battle.questions.length} · ${topicName}${q.source === 'teacher' ? ' · מדף המורה' : ''}`;
-
-  const parts = [`<div class="q-text">${esc(q.instruction)}</div>`];
-  parts.push(q.ui === 'mission' ? renderMission(q) : renderExpr(q));
-  $('#q-body').innerHTML = parts.join('');
-
-  const fb = $('#q-feedback');
-  fb.hidden = true;
-  fb.innerHTML = '';
-
-  answerInput.reset(q.unit);
-  $('#btn-submit').hidden = false;
-  $('#btn-submit').disabled = false;
-  $('#btn-next').hidden = true;
-  $('#btn-hint').disabled = false;
-
-  const readBtn = document.getElementById('btn-read');
-  if (readBtn) {
-    readBtn.onclick = () => speak(q.story.replace(/\[\[|\]\]/g, ''));
-  }
-
-  renderPips();
-}
-
-function renderPips() {
-  const pips = battle.questions.map((_, i) => {
-    const r = battle.results[i];
-    let cls = 'pip';
-    if (r === 'first') cls += ' good';
-    else if (r === 'second') cls += ' half';
-    else if (r === 'fail') cls += ' bad';
-    if (i === battle.index) cls += ' current';
-    return `<div class="${cls}"></div>`;
-  }).join('');
-  $('#battle-progress').innerHTML = pips;
-}
 
 /* ============================ משוב ============================ */
 
@@ -92,13 +28,77 @@ function showFeedback(kind, title, html) {
   fb.hidden = false;
 }
 
+function hideFeedback() {
+  const fb = $('#q-feedback');
+  fb.hidden = true;
+  fb.innerHTML = '';
+}
+
 function stepsHtml(steps) {
   return `<ol>${steps.map((s) => `<li>${wrapMath(esc(s))}</li>`).join('')}</ol>`;
 }
 
-/** רמז - עם עטיפת LTR לכל תרגיל שמופיע בתוכו */
 function hintHtml(q) {
   return `<div>💡 ${wrapMath(esc(q.hint))}</div>`;
+}
+
+/* ============================ ציור השאלה ============================ */
+
+function setKeypadVisible(show) {
+  $('#answer-row').hidden = !show;
+  $('#keypad').hidden = !show;
+}
+
+function questionContext() {
+  return {
+    keypad: answerInput,
+    canRead: canSpeak(),
+    speak,
+    toast,
+    setKeypad: setKeypadVisible,
+    verdict: (v) => handleVerdict(v),
+  };
+}
+
+function renderQuestion() {
+  const q = battle.questions[battle.index];
+  battle.errors = 0;
+  battle.hintShown = false;
+
+  const topicName = TOPICS[q.topic] ? TOPICS[q.topic].name : '';
+  const tags = [
+    `שאלה ${battle.index + 1} מתוך ${battle.questions.length}`,
+    topicName,
+    q.source === 'teacher' ? 'מדף המורה' : '',
+    q.fromReview ? 'חזרה 🔁' : '',
+  ].filter(Boolean);
+  $('#q-topic').textContent = tags.join(' · ');
+
+  hideFeedback();
+  answerInput.reset(q.unit);
+
+  battle.component = createQuestionUI(q, questionContext());
+  battle.component.mount($('#q-body'));
+
+  setKeypadVisible(battle.component.usesKeypad);
+  $('#btn-submit').hidden = !battle.component.usesSubmit;
+  $('#btn-submit').disabled = false;
+  $('#btn-next').hidden = true;
+  $('#btn-hint').disabled = false;
+
+  renderPips();
+}
+
+function renderPips() {
+  $('#battle-progress').innerHTML = battle.questions.map((_, i) => {
+    const r = battle.results[i];
+    let cls = 'pip';
+    if (r === 'first') cls += ' good';
+    else if (r === 'second') cls += ' half';
+    else if (r === 'fail') cls += ' bad';
+    if (i === battle.index) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
 }
 
 /* ============================ אנימציות ============================ */
@@ -125,7 +125,7 @@ function setHp(hp) {
   $('#hp-fill').style.width = `${Math.max(0, (hp / MONSTER_MAX_HP) * 100)}%`;
 }
 
-/* ============================ פעולות ============================ */
+/* ============================ פסק דין ============================ */
 
 const PRAISE_FIRST = ['מצוין!', 'כל הכבוד!', 'בול בול!', 'אלוף!', 'מדויק!'];
 const PRAISE_SECOND = ['יפה מאוד, הצלחת!', 'כל הכבוד על ההתמדה!', 'זהו, תפסת את זה!'];
@@ -133,17 +133,26 @@ const ENCOURAGE = ['כמעט! בוא ננסה שוב עם רמז.', 'לא נור
 
 function pickOf(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function onSubmit() {
+function handleVerdict(v) {
+  if (!battle || battle.finished) return;
   const q = battle.questions[battle.index];
-  const val = answerInput.value();
-  if (val === null) {
-    toast('כתבו תשובה ואז לחצו בדיקה 🙂');
+
+  if (v.status === 'incomplete') {
+    toast(v.message || 'עוד לא סיימנו כאן 🙂');
     return;
   }
 
-  if (val === q.answer) {
-    const outcome = battle.attempts === 0 ? 'first' : 'second';
-    const coins = outcome === 'first' ? REWARDS.firstTry : REWARDS.secondTry;
+  // התקדמות בתוך השאלה (אבן נוספת, מעבר לשלב ההסבר)
+  if (v.status === 'progress') {
+    showFeedback('good', v.message || 'יופי!', '');
+    return;
+  }
+
+  if (v.status === 'correct') {
+    const outcome = battle.errors === 0 ? 'first' : 'second';
+    const base = outcome === 'first' ? REWARDS.firstTry : REWARDS.secondTry;
+    const bonus = v.bonus || 0;
+    const coins = base + bonus;
     const xp = outcome === 'first' ? REWARDS.xpFirstTry : REWARDS.xpSecondTry;
     const damage = outcome === 'first' ? 20 : 12;
 
@@ -153,36 +162,38 @@ function onSubmit() {
     battle.hp = Math.max(0, battle.hp - damage);
 
     answerInput.markRight();
-    answerInput.setEnabled(false);
     attackAnimation(damage);
     setHp(battle.hp);
 
     addCoins(coins);
     const lvl = addXp(xp);
     recordAnswer(q.topic, outcome);
+    if (q.fromReview) clearFromReview(q.type);
     if (lvl.leveledUp) battle.levelUps.push(lvl.rank.name);
     updateHUD();
 
     const praise = outcome === 'first' ? pickOf(PRAISE_FIRST) : pickOf(PRAISE_SECOND);
-    showFeedback('good', `${praise} 🎉`, `<div>התשובה <span class="num">${fmt(q.answer)}</span> נכונה. קיבלת <span class="num">${fmt(coins)}</span> מטבעות.</div>`);
+    const extra = bonus ? ` (כולל בונוס של ${fmt(bonus)})` : '';
+    showFeedback('good', `${praise} 🎉`, `
+      ${v.message ? `<div>${esc(v.message)}</div>` : ''}
+      <div>קיבלת <span class="num">${fmt(coins)}</span> מטבעות${esc(extra)}.</div>`);
     endOfQuestion();
     return;
   }
 
   // תשובה לא נכונה
-  if (battle.attempts === 0) {
-    battle.attempts = 1;
-    answerInput.markWrong();
-    showFeedback('hint', pickOf(ENCOURAGE), `${hintHtml(q)}<div style="margin-top:6px">נסו שוב - אין שום הפסד של מטבעות.</div>`);
+  battle.errors += 1;
+  answerInput.markWrong();
+
+  if (battle.errors === 1) {
+    showFeedback('hint', v.message || pickOf(ENCOURAGE),
+      `${hintHtml(q)}<div class="fb-extra">נסו שוב - אין שום הפסד של מטבעות.</div>`);
     battle.hintShown = true;
     $('#btn-hint').disabled = true;
     return;
   }
 
-  // ניסיון שני שגוי - מציגים פתרון מלא
   battle.results[battle.index] = 'fail';
-  answerInput.markWrong();
-  answerInput.setEnabled(false);
   recordAnswer(q.topic, 'fail');
   pushToReview(q);
   const lvl = addXp(REWARDS.xpEffort);
@@ -190,20 +201,25 @@ function onSubmit() {
   battle.xp += REWARDS.xpEffort;
   updateHUD();
 
-  showFeedback(
-    'solve',
-    'בוא נפתור את זה יחד, שלב אחר שלב:',
-    `${stepsHtml(q.steps)}<div style="margin-top:8px">התשובה הנכונה: <span class="num">${fmt(q.answer)}</span>. השאלה הזו תחזור אלינו בקרב הבא כדי להתאמן עליה שוב. 💪</div>`
-  );
+  const answerText = typeof q.answer === 'number' ? fmt(q.answer) : String(q.answer);
+  showFeedback('solve', 'בוא נפתור את זה יחד, שלב אחר שלב:',
+    `${stepsHtml(q.steps)}<div class="fb-extra">התשובה הנכונה: <span class="num">${esc(answerText)}</span>. השאלה הזו תחזור אלינו בקרב הבא כדי להתאמן עליה שוב. 💪</div>`);
   endOfQuestion();
 }
 
 function endOfQuestion() {
+  if (battle.component && battle.component.lock) battle.component.lock();
+  answerInput.setEnabled(false);
   renderPips();
   $('#btn-submit').hidden = true;
   $('#btn-next').hidden = false;
   $('#btn-hint').disabled = true;
   $('#btn-next').focus();
+}
+
+function onSubmit() {
+  if (!battle || !battle.component) return;
+  handleVerdict(battle.component.submit());
 }
 
 function onHint() {
@@ -234,10 +250,12 @@ function onNext() {
 /* ============================ סיום קרב ============================ */
 
 function finishBattle() {
+  battle.finished = true;
   const firstTry = battle.results.filter((r) => r === 'first').length;
   const second = battle.results.filter((r) => r === 'second').length;
   const correct = firstTry + second;
-  const perfect = firstTry === battle.questions.length;
+  const total = battle.questions.length;
+  const perfect = firstTry === total;
 
   let bonus = 0;
   if (perfect) {
@@ -252,15 +270,11 @@ function finishBattle() {
 
   const s = getState();
   const defeated = battle.hp <= 0;
+  const days = battle.streakInfo.streak === 1 ? 'יום אחד' : `${fmt(battle.streakInfo.streak)} ימים`;
+  const value = (v) => (/[֐-׿]/.test(v) ? `<span>${esc(v)}</span>` : `<span class="num">${esc(v)}</span>`);
 
   $('#summary-title').textContent = defeated ? 'ניצחון! 🏆' : 'סוף הקרב';
   $('#summary-art').textContent = defeated ? '🐉⚔️' : '💪';
-
-  const total = battle.questions.length;
-  const days = battle.streakInfo.streak === 1 ? 'יום אחד' : `${fmt(battle.streakInfo.streak)} ימים`;
-
-  // ערך מעורב (מספר + עברית) נשאר בכיוון עברי; ערך מספרי טהור נעטף ב-LTR
-  const value = (v) => (/[֐-׿]/.test(v) ? `<span>${esc(v)}</span>` : `<span class="num">${esc(v)}</span>`);
 
   const rows = [
     ['תשובות נכונות', `${fmt(correct)} מתוך ${fmt(total)}`],
@@ -288,23 +302,28 @@ function finishBattle() {
   }
 }
 
-/* ============================ התחלה ============================ */
+/* ============================ התחלה ויציאה ============================ */
 
-export function startBattle() {
+export function startBattle(options = {}) {
   const s = getState();
   const monster = randomMonster();
+  const topic = options.topic || null;
+
   battle = {
-    questions: buildBattle(s, QUESTIONS_PER_BATTLE),
+    topic,
+    questions: buildBattle(s, { count: QUESTIONS_PER_BATTLE, topic }),
     monster,
     hp: MONSTER_MAX_HP,
     index: 0,
-    attempts: 0,
+    errors: 0,
     hintShown: false,
     hintsBought: 0,
     results: [],
     coins: 0,
     xp: 0,
     levelUps: [],
+    component: null,
+    finished: false,
     streakInfo: touchDailyStreak(),
   };
 
@@ -320,11 +339,23 @@ export function startBattle() {
   });
 
   showScreen('battle');
+  if (topic && TOPICS[topic]) $('#topbar-title').textContent = TOPICS[topic].region;
   renderQuestion();
 
   if (battle.streakInfo.isNewDay && battle.streakInfo.streak > 1) {
     toast(`🔥 רצף של ${battle.streakInfo.streak} ימים! בונוס בסוף הקרב.`);
   }
+}
+
+/** האם יש קרב פעיל שעדיין לא הסתיים */
+export function isBattleActive() {
+  return Boolean(battle && !battle.finished);
+}
+
+/** יציאה מהקרב באמצע - מה שנענה כבר נשמר */
+export function abandonBattle() {
+  if (battle) battle.finished = true;
+  battle = null;
 }
 
 export function bindBattleButtons() {

@@ -2,18 +2,29 @@
 // כל שאלה מחזירה: נוסח, תשובה נכונה, רמז, ופתרון מלא בשלבים.
 
 import { ri, pick, shuffle, weightedPick, fmt } from './util.js';
+import { N, O, L, R, solve, tokensToString } from './exprtokens.js';
 
 /* ============================ נושאים ============================ */
 
 export const TOPICS = {
-  mult_table: { id: 'mult_table', name: 'לוח הכפל', region: 'הר לוח הכפל' },
-  mult_big: { id: 'mult_big', name: 'כפל מספרים גדולים', region: 'מכרות הכפל' },
-  add_sub: { id: 'add_sub', name: 'חיבור וחיסור עם המרה', region: 'גשר המספרים' },
-  order_ops: { id: 'order_ops', name: 'סדר פעולות חשבון', region: 'מגדל הפעולות' },
-  missing: { id: 'missing', name: 'המספר החסר', region: 'מערת החידות' },
-  weight: { id: 'weight', name: 'יחידות משקל', region: 'שוק המאזניים' },
-  word: { id: 'word', name: 'שאלות מילוליות', region: 'כפר המשימות' },
+  mult_table: { id: 'mult_table', name: 'לוח הכפל', region: 'הר לוח הכפל', icon: '⛰️' },
+  mult_big: { id: 'mult_big', name: 'כפל מספרים גדולים', region: 'מכרות הכפל', icon: '⛏️' },
+  add_sub: { id: 'add_sub', name: 'חיבור וחיסור עם המרה', region: 'גשר המספרים', icon: '🌉' },
+  order_ops: { id: 'order_ops', name: 'סדר פעולות חשבון', region: 'מגדל הפעולות', icon: '🗼' },
+  missing: { id: 'missing', name: 'המספר החסר', region: 'מערת החידות', icon: '🕯️' },
+  weight: { id: 'weight', name: 'יחידות משקל', region: 'שוק המאזניים', icon: '⚖️' },
+  word: { id: 'word', name: 'שאלות מילוליות', region: 'כפר המשימות', icon: '🏘️' },
+  numberline: { id: 'numberline', name: 'ישר המספרים', region: 'שביל אבני הקפיצה', icon: '🪨' },
+  distribute: { id: 'distribute', name: 'כפל בעזרת פילוג', region: 'נפחיית הפילוג', icon: '🔨' },
+  divisibility: { id: 'divisibility', name: 'סימני התחלקות', region: 'מרתף האוצרות', icon: '🗝️' },
+  insight: { id: 'insight', name: 'תובנה מספרית', region: 'היכל התובנה', icon: '🔮' },
 };
+
+/** סדר האזורים במפת העולם */
+export const REGION_ORDER = [
+  'mult_table', 'numberline', 'add_sub', 'mult_big', 'distribute',
+  'order_ops', 'missing', 'divisibility', 'weight', 'word', 'insight',
+];
 
 /* ============================ עזרים ============================ */
 
@@ -487,22 +498,378 @@ function genWordBuyRemain() {
   });
 }
 
+/* ============================ ישר המספרים ============================ */
+
+/** השלמת ערכים חסרים על ציר המספרים (אבני קפיצה) */
+function genNumberLineFill() {
+  const step = pick([10, 50, 100, 100, 1000, 25]);
+  const count = ri(5, 6);
+  const start = step * ri(step >= 100 ? 12 : 4, step >= 100 ? 90 : 40);
+  const values = Array.from({ length: count }, (_, i) => start + i * step);
+
+  // שתי אבנים חסרות, אף פעם לא הראשונה או האחרונה.
+  // תמיד נשארת לפחות אבן פנימית אחת גלויה, כדי שאפשר יהיה לראות את גודל הקפיצה.
+  const inner = shuffle(values.slice(1, -1).map((_, i) => i + 1));
+  const blanks = inner.slice(0, Math.max(1, Math.min(2, inner.length - 1))).sort((a, b) => a - b);
+
+  return Q({
+    type: 'numberline_fill',
+    topic: 'numberline',
+    ui: 'numberline_fill',
+    instruction: 'השלימו את ציר המספרים במקומות החסרים:',
+    stones: values.map((v, i) => ({ value: v, blank: blanks.includes(i) })),
+    step,
+    answer: values[blanks[0]],
+    answers: blanks.map((i) => values[i]),
+    hint: `בכל קפיצה מוסיפים ${fmt(step)}. בדקו מה ההפרש בין שתי אבנים שכבר כתובות.`,
+    steps: [
+      `ההפרש בין אבן לאבן הוא ${fmt(step)}.`,
+      ...blanks.map((i) => `${fmt(values[i - 1])} + ${fmt(step)} = ${fmt(values[i])}.`),
+    ],
+  });
+}
+
+/** איתור מיקומו של מספר על הציר */
+function genNumberLineLocate() {
+  const step = pick([100, 100, 500, 1000, 50]);
+  const ticks = 7;
+  const start = step * ri(4, 40);
+  const values = Array.from({ length: ticks }, (_, i) => start + i * step);
+  const target = ri(1, ticks - 2);
+
+  return Q({
+    type: 'numberline_locate',
+    topic: 'numberline',
+    ui: 'numberline_locate',
+    instruction: 'בחרו את המקום הנכון על הציר, והלוחם יקפוץ לשם:',
+    stones: values.map((v, i) => ({ value: v, blank: i !== 0 && i !== ticks - 1 })),
+    target: values[target],
+    answer: values[target],
+    correctIndex: target,
+    hint: `הציר מתחיל ב-${fmt(values[0])} וכל קפיצה היא ${fmt(step)}. ספרו קפיצות עד ${fmt(values[target])}.`,
+    steps: [
+      `מתחילים ב-${fmt(values[0])}, וכל קפיצה מוסיפה ${fmt(step)}.`,
+      `${fmt(values[target])} − ${fmt(values[0])} = ${fmt(values[target] - values[0])}.`,
+      `${fmt(values[target] - values[0])} : ${fmt(step)} = ${fmt(target)}, כלומר ${fmt(target)} קפיצות מההתחלה.`,
+    ],
+  });
+}
+
+/* ============================ סדר פעולות - ממשק הקשה ============================ */
+
+function orderOpsTokens() {
+  const form = ri(1, 5);
+  if (form === 1) {
+    const c = ri(2, 9); const q = ri(2, 9); const b = c * q; const a = ri(q + 5, 60);
+    return [N(a), O('−'), N(b), O(':'), N(c)];
+  }
+  if (form === 2) {
+    const b = ri(2, 9); const q = ri(2, 10); const a = b * q; const c = ri(2, 9); const d = ri(2, 9);
+    return [L(), N(a), O(':'), N(b), R(), O('+'), L(), N(c), O('×'), N(d), R()];
+  }
+  if (form === 3) {
+    return [N(ri(5, 40)), O('+'), N(ri(2, 9)), O('×'), N(ri(2, 9))];
+  }
+  if (form === 4) {
+    return [L(), N(ri(3, 15)), O('+'), N(ri(3, 15)), R(), O('×'), N(ri(2, 9))];
+  }
+  const b = ri(2, 9); const q1 = ri(2, 9); const d = ri(2, 9); const q2 = ri(2, 9);
+  return [N(b * q1), O(':'), N(b), O('+'), N(d * q2), O(':'), N(d)];
+}
+
+function genOrderOpsTap() {
+  const tokens = orderOpsTokens();
+  const sol = solve(tokens);
+  return Q({
+    type: 'order_ops_tap',
+    topic: 'order_ops',
+    ui: 'orderops',
+    instruction: 'על איזו פעולה לוחצים קודם?',
+    tokens,
+    expr: `${tokensToString(tokens)} = ?`,
+    exprPlain: tokensToString(tokens).replace(/×/g, '*').replace(/:/g, '/').replace(/−/g, '-').replace(/,/g, ''),
+    answer: sol.answer,
+    hint: 'קודם מה שבתוך הסוגריים, אחר כך כפל וחילוק, ורק בסוף חיבור וחיסור.',
+    steps: [...sol.steps.map((s) => `${s}.`), `התוצאה: ${fmt(sol.answer)}.`],
+  });
+}
+
+/* ============================ פילוג ============================ */
+
+/** הלוחם מפצל מספר לשני חלקים, ורואים גם מודל שטח */
+function genDistributeSplit() {
+  const a = ri(12, 48);
+  const b = pick([12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 26]);
+  const tens = Math.floor(b / 10) * 10;
+  const units = b % 10;
+  // אפשרויות פיצול שונות זו מזו (בלי כפילויות ובלי סדר הפוך של אותו פיצול)
+  const seen = new Set();
+  const splits = shuffle([
+    [tens, units],
+    [Math.floor(b / 2), b - Math.floor(b / 2)],
+    [b - 5, 5],
+    [10, b - 10],
+    [b - 3, 3],
+    [b - 1, 1],
+  ].filter(([x, y]) => {
+    if (x <= 0 || y <= 0) return false;
+    const key = [x, y].sort((m, n) => m - n).join('+');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  })).slice(0, 4);
+
+  return Q({
+    type: 'distribute_split',
+    topic: 'distribute',
+    ui: 'distribute',
+    instruction: 'פצלו את המספר לשני חלקים ופתרו בעזרת פילוג:',
+    a,
+    b,
+    splits,
+    expr: `${fmt(a)} × ${fmt(b)} = ?`,
+    exprPlain: `${a}*${b}`,
+    answer: a * b,
+    hint: `הכי נוח לפצל את ${fmt(b)} ל-${fmt(tens)} + ${fmt(units)}: קודם ${fmt(a)} × ${fmt(tens)}, ואז ${fmt(a)} × ${fmt(units)}.`,
+    steps: [
+      `${fmt(b)} = ${fmt(tens)} + ${fmt(units)}.`,
+      `${fmt(a)} × ${fmt(tens)} = ${fmt(a * tens)}.`,
+      `${fmt(a)} × ${fmt(units)} = ${fmt(a * units)}.`,
+      `מחברים את שני החלקים: ${fmt(a * tens)} + ${fmt(a * units)} = ${fmt(a * b)}.`,
+    ],
+  });
+}
+
+/** השלמת המספר החסר בפירוק, בנוסח דף התרגול */
+function genDistributeMissing() {
+  const a = pick([26, 28, 36, 42, 52, 63]);
+  const b = ri(12, 19);
+  const part = ri(4, b - 2);
+  const missing = b - part;
+  return Q({
+    type: 'distribute_missing',
+    topic: 'distribute',
+    instruction: 'השלימו את המספר החסר בפירוק:',
+    expr: `${fmt(a)} × ${fmt(b)} = ${fmt(a)} × ${fmt(part)} + ${fmt(a)} × ?`,
+    exprPlain: `${a}*${b}=${a}*${part}+${a}*x`,
+    answer: missing,
+    hint: `שני החלקים ביחד חייבים להשלים את ${fmt(b)}. כמה חסר ל-${fmt(part)} כדי להגיע ל-${fmt(b)}?`,
+    steps: [
+      `הפילוג מחלק את ${fmt(b)} לשני חלקים.`,
+      `${fmt(b)} − ${fmt(part)} = ${fmt(missing)}.`,
+      `בדיקה: ${fmt(a)} × ${fmt(part)} + ${fmt(a)} × ${fmt(missing)} = ${fmt(a * part)} + ${fmt(a * missing)} = ${fmt(a * b)}.`,
+    ],
+  });
+}
+
+/* ============================ סימני התחלקות ============================ */
+
+const DIVISIBILITY_RULES = {
+  2: 'מספר מתחלק ב-2 אם ספרת האחדות שלו זוגית (0, 2, 4, 6, 8).',
+  5: 'מספר מתחלק ב-5 אם ספרת האחדות שלו היא 0 או 5.',
+  10: 'מספר מתחלק ב-10 אם ספרת האחדות שלו היא 0.',
+  3: 'מספר מתחלק ב-3 אם סכום ספרותיו מתחלק ב-3.',
+  6: 'מספר מתחלק ב-6 אם הוא מתחלק גם ב-2 (ספרת אחדות זוגית) וגם ב-3 (סכום הספרות מתחלק ב-3).',
+};
+
+function genDivisibility() {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const divisor = pick([2, 5, 5, 6, 6, 10, 3]);
+    const digits = [ri(1, 9), ri(0, 9), ri(0, 9)];
+    const pos = ri(0, 2);
+    const valid = [];
+    for (let d = 0; d <= 9; d++) {
+      if (pos === 0 && d === 0) continue;
+      const n = Number(digits.map((x, i) => (i === pos ? d : x)).join(''));
+      if (n % divisor === 0) valid.push(d);
+    }
+    if (!valid.length) continue;
+
+    const shown = digits.map((x, i) => (i === pos ? null : x));
+    const display = shown.map((x) => (x === null ? '?' : x)).join('');
+    const example = digits.map((x, i) => (i === pos ? valid[0] : x)).join('');
+
+    return Q({
+      type: 'divisibility',
+      topic: 'divisibility',
+      ui: 'divisibility',
+      instruction: `סמנו כל ספרה שמתאימה, כך שהמספר יתחלק ב-${divisor}:`,
+      digitsShown: shown,
+      divisor,
+      validDigits: valid,
+      expr: `${display}`,
+      answer: valid[0],
+      hint: DIVISIBILITY_RULES[divisor],
+      steps: [
+        DIVISIBILITY_RULES[divisor],
+        `הספרות המתאימות הן: ${valid.join(', ')}.`,
+        `לדוגמה ${fmt(Number(example))} : ${divisor} = ${fmt(Number(example) / divisor)}.`,
+      ],
+    });
+  }
+  return genMultTable();
+}
+
+/* ============================ תובנה מספרית ============================ */
+
+function explainOptions(correctText, wrongA, wrongB) {
+  return shuffle([
+    { text: correctText, correct: true },
+    { text: wrongA, correct: false },
+    { text: wrongB, correct: false },
+  ]);
+}
+
+/** נתון תרגיל פתור - פותרים תרגיל קרוב בלי לחשב מחדש, ומסבירים למה */
+function genInsight() {
+  const a = pick([15, 25, 35, 45, 24, 32]);
+  const b = pick([12, 14, 16, 18]);
+  const p = a * b;
+  const mode = ri(1, 3);
+
+  if (mode === 1) {
+    return Q({
+      type: 'insight_double',
+      topic: 'insight',
+      ui: 'explain',
+      instruction: 'היעזרו בתרגיל הפתור:',
+      given: `${fmt(a)} × ${fmt(b)} = ${fmt(p)}`,
+      stage1: { kind: 'numeric', prompt: `${fmt(a * 2)} × ${fmt(b)} = ?` },
+      answer: p * 2,
+      explainQuestion: 'למה זו התשובה?',
+      options: explainOptions(
+        `הגורם ${fmt(a)} גדל פי 2, ולכן גם המכפלה גדלה פי 2.`,
+        `הגורם ${fmt(a)} גדל פי 2, ולכן מוסיפים 2 למכפלה.`,
+        'שני הגורמים השתנו, ולכן צריך לחשב הכול מההתחלה.'
+      ),
+      hint: `${fmt(a * 2)} זה בדיוק פי 2 מ-${fmt(a)}. מה קורה למכפלה כשגורם אחד גדל פי 2?`,
+      steps: [
+        `${fmt(a * 2)} = ${fmt(a)} × 2.`,
+        `כשגורם אחד גדל פי 2, המכפלה גדלה פי 2.`,
+        `${fmt(p)} × 2 = ${fmt(p * 2)}.`,
+      ],
+    });
+  }
+
+  if (mode === 2) {
+    return Q({
+      type: 'insight_half',
+      topic: 'insight',
+      ui: 'explain',
+      instruction: 'היעזרו בתרגיל הפתור:',
+      given: `${fmt(a)} × ${fmt(b)} = ${fmt(p)}`,
+      stage1: { kind: 'numeric', prompt: `${fmt(a)} × ${fmt(b / 2)} = ?` },
+      answer: p / 2,
+      explainQuestion: 'למה זו התשובה?',
+      options: explainOptions(
+        `הגורם ${fmt(b)} קטן פי 2, ולכן גם המכפלה קטנה פי 2.`,
+        `הגורם ${fmt(b)} קטן ב-${fmt(b / 2)}, ולכן מחסירים ${fmt(b / 2)} מהמכפלה.`,
+        'אי אפשר להיעזר בתרגיל הפתור, צריך לכפול מחדש.'
+      ),
+      hint: `${fmt(b / 2)} זה חצי מ-${fmt(b)}. מה קורה למכפלה כשגורם אחד קטן פי 2?`,
+      steps: [
+        `${fmt(b / 2)} = ${fmt(b)} : 2.`,
+        'כשגורם אחד קטן פי 2, המכפלה קטנה פי 2.',
+        `${fmt(p)} : 2 = ${fmt(p / 2)}.`,
+      ],
+    });
+  }
+
+  return Q({
+    type: 'insight_factor',
+    topic: 'insight',
+    ui: 'explain',
+    instruction: 'היעזרו בתרגיל הפתור:',
+    given: `${fmt(a)} × ${fmt(b)} = ${fmt(p)}`,
+    stage1: { kind: 'numeric', prompt: `${fmt(a)} × ${fmt(b)} × ? = ${fmt(p * 2)}` },
+    answer: 2,
+    explainQuestion: 'איך ידענו זאת בלי לחשב?',
+    options: explainOptions(
+      'הגורמים בתרגיל זהים. גילינו שהמכפלה גדלה פי 2, ולכן נכפול בגורם 2.',
+      `המכפלה גדלה ב-${fmt(p)}, ולכן נוסיף 2 לתרגיל.`,
+      'צריך לחלק את המכפלה החדשה בשני הגורמים.'
+    ),
+    hint: `השוו: ${fmt(p * 2)} לעומת ${fmt(p)}. פי כמה גדלה המכפלה?`,
+    steps: [
+      `${fmt(p * 2)} : ${fmt(p)} = 2, כלומר המכפלה גדלה פי 2.`,
+      'הגורמים נשארו זהים, ולכן הגורם החסר הוא 2.',
+      `בדיקה: ${fmt(p)} × 2 = ${fmt(p * 2)}.`,
+    ],
+  });
+}
+
+/** שאלת החולצות - כן / לא / תלוי, ואז הסבר */
+function genShirts() {
+  const low = 15;
+  const high = 25;
+  const count = 3;
+  const p = person();
+  const money = pick([80, 40, 60, 90, 45]);
+  const minCost = low * count;
+  const maxCost = high * count;
+
+  let verdict, correctText, wrongA, wrongB;
+  if (money >= maxCost) {
+    verdict = 'כן';
+    correctText = `גם אם כל חולצה תעלה ${fmt(high)} ש"ח, ${fmt(count)} חולצות יעלו ${fmt(maxCost)} ש"ח - ויש ${fmt(money)} ש"ח.`;
+    wrongA = `${fmt(money)} גדול מ-${fmt(high)}, ולכן תמיד יספיק.`;
+    wrongB = `${fmt(count)} חולצות עולות ${fmt(minCost)} ש"ח בלבד, כי זה המחיר הזול ביותר.`;
+  } else if (money < minCost) {
+    verdict = 'לא';
+    correctText = `אפילו במחיר הזול ביותר, ${fmt(count)} חולצות יעלו ${fmt(minCost)} ש"ח - ויש רק ${fmt(money)} ש"ח.`;
+    wrongA = `${fmt(money)} קטן מ-${fmt(maxCost)}, ולכן בטוח לא יספיק אף פעם.`;
+    wrongB = `אפשר לקנות ${fmt(count)} חולצות ולהישאר עם עודף.`;
+  } else {
+    verdict = 'תלוי במחיר';
+    correctText = `במחיר הזול ${fmt(count)} חולצות עולות ${fmt(minCost)} ש"ח (מספיק), ובמחיר היקר ${fmt(maxCost)} ש"ח (לא מספיק).`;
+    wrongA = `${fmt(money)} תמיד מספיק, כי הוא גדול מ-${fmt(minCost)}.`;
+    wrongB = `${fmt(money)} אף פעם לא מספיק, כי הוא קטן מ-${fmt(maxCost)}.`;
+  }
+
+  return Q({
+    type: 'word_shirts',
+    topic: 'word',
+    ui: 'explain',
+    instruction: 'משימה:',
+    story: `מחירן של חולצות בית ספר נע בין [[${fmt(low)}]] ש"ח ל-[[${fmt(high)}]] ש"ח. ל${p.name} יש [[${fmt(money)}]] ש"ח. האם הכסף יספיק ${p.to} לקניית [[${fmt(count)}]] חולצות?`,
+    stage1: { kind: 'choice', prompt: 'מה התשובה?', choices: ['כן', 'לא', 'תלוי במחיר'] },
+    answer: verdict,
+    explainQuestion: 'ולמה?',
+    options: explainOptions(correctText, wrongA, wrongB),
+    hint: `בדקו שני מצבים: מה יקרה אם כל החולצות במחיר הזול (${fmt(low)} ש"ח), ומה יקרה אם כולן במחיר היקר (${fmt(high)} ש"ח).`,
+    steps: [
+      `הזול ביותר: ${fmt(count)} × ${fmt(low)} = ${fmt(minCost)} ש"ח.`,
+      `היקר ביותר: ${fmt(count)} × ${fmt(high)} = ${fmt(maxCost)} ש"ח.`,
+      `יש ${fmt(money)} ש"ח, ולכן התשובה היא: ${verdict}.`,
+      correctText,
+    ],
+  });
+}
+
 /* ============================ רישום הגנרטורים ============================ */
 
 export const GENERATORS = [
   { type: 'mult_table', topic: 'mult_table', weight: 3, gen: genMultTable },
-  { type: 'mult_round_tens', topic: 'mult_big', weight: 1.4, gen: genMultRoundTens },
-  { type: 'mult_by_unit', topic: 'mult_big', weight: 1.2, gen: genMultByUnit },
-  { type: 'add4', topic: 'add_sub', weight: 1.2, gen: genAdd4 },
-  { type: 'sub4', topic: 'add_sub', weight: 1.2, gen: genSub4 },
-  { type: 'order_ops', topic: 'order_ops', weight: 1.8, gen: genOrderOps },
-  { type: 'missing', topic: 'missing', weight: 1.5, gen: genMissing },
+  { type: 'mult_round_tens', topic: 'mult_big', weight: 1.2, gen: genMultRoundTens },
+  { type: 'mult_by_unit', topic: 'mult_big', weight: 1, gen: genMultByUnit },
+  { type: 'add4', topic: 'add_sub', weight: 1.1, gen: genAdd4 },
+  { type: 'sub4', topic: 'add_sub', weight: 1.1, gen: genSub4 },
+  { type: 'order_ops', topic: 'order_ops', weight: 0.9, gen: genOrderOps },
+  { type: 'order_ops_tap', topic: 'order_ops', weight: 1.2, gen: genOrderOpsTap },
+  { type: 'missing', topic: 'missing', weight: 1.3, gen: genMissing },
   { type: 'weight', topic: 'weight', weight: 1, gen: genWeight },
-  { type: 'word_diff', topic: 'word', weight: 0.6, gen: genWordDiff },
-  { type: 'word_budget', topic: 'word', weight: 0.6, gen: genWordBudget },
-  { type: 'word_half_half', topic: 'word', weight: 0.6, gen: genWordHalfHalf },
-  { type: 'word_multi_buy', topic: 'word', weight: 0.5, gen: genWordMultiBuy },
-  { type: 'word_buy_remain', topic: 'word', weight: 0.5, gen: genWordBuyRemain },
+  { type: 'numberline_fill', topic: 'numberline', weight: 1.1, gen: genNumberLineFill },
+  { type: 'numberline_locate', topic: 'numberline', weight: 0.8, gen: genNumberLineLocate },
+  { type: 'distribute_split', topic: 'distribute', weight: 1.1, gen: genDistributeSplit },
+  { type: 'distribute_missing', topic: 'distribute', weight: 0.9, gen: genDistributeMissing },
+  { type: 'divisibility', topic: 'divisibility', weight: 1.2, gen: genDivisibility },
+  { type: 'insight', topic: 'insight', weight: 1, gen: genInsight },
+  { type: 'word_diff', topic: 'word', weight: 0.5, gen: genWordDiff },
+  { type: 'word_budget', topic: 'word', weight: 0.5, gen: genWordBudget },
+  { type: 'word_half_half', topic: 'word', weight: 0.5, gen: genWordHalfHalf },
+  { type: 'word_multi_buy', topic: 'word', weight: 0.4, gen: genWordMultiBuy },
+  { type: 'word_buy_remain', topic: 'word', weight: 0.4, gen: genWordBuyRemain },
+  { type: 'word_shirts', topic: 'word', weight: 0.5, gen: genShirts },
 ];
 
 export function generateByType(type) {
@@ -634,6 +1001,164 @@ export const TEACHER_QUESTIONS = [
     hint: 'מה שנותר = הסכום שהוקצב פחות מה שהוצא בפועל.',
     steps: ['876,000 − 795,000 = 81,000.', 'נותרו 81,000 ש"ח.'],
   }),
+  // --- ישר המספרים ---
+  () => T({
+    type: 'teacher_numberline_1', topic: 'numberline', ui: 'numberline_fill',
+    instruction: 'השלימו את ציר המספרים במקומות החסרים:',
+    stones: [
+      { value: 3900, blank: false }, { value: 4000, blank: true },
+      { value: 4100, blank: true }, { value: 4200, blank: false },
+    ],
+    step: 100, answer: 4000, answers: [4000, 4100],
+    hint: 'ההפרש בין 3,900 ל-4,200 הוא 300, בשלוש קפיצות - כל קפיצה 100.',
+    steps: ['כל קפיצה היא 100.', '3,900 + 100 = 4,000.', '4,000 + 100 = 4,100.'],
+  }),
+  () => T({
+    type: 'teacher_numberline_2', topic: 'numberline', ui: 'numberline_fill',
+    instruction: 'השלימו את ציר המספרים במקומות החסרים:',
+    stones: [
+      { value: 5600, blank: false }, { value: 5700, blank: false },
+      { value: 5800, blank: true }, { value: 5900, blank: true },
+      { value: 6000, blank: false },
+    ],
+    step: 100, answer: 5800, answers: [5800, 5900],
+    hint: 'מ-5,600 ל-5,700 הקפיצה היא 100, ולכן כל הקפיצות הן 100.',
+    steps: ['5,700 − 5,600 = 100, זו גודל הקפיצה.', '5,700 + 100 = 5,800.', '5,800 + 100 = 5,900.'],
+  }),
+
+  // --- פילוג ---
+  () => T({
+    type: 'teacher_dist_1', topic: 'distribute',
+    instruction: 'כתבו תרגיל מתאים לפירוק - השלימו את החסר:',
+    expr: '52 × 5 = 50 × 5 + ? × 5', exprPlain: '52*5=50*5+x*5', answer: 2,
+    hint: '52 פורק ל-50 ועוד משהו. כמה חסר ל-50 כדי להגיע ל-52?',
+    steps: ['52 = 50 + 2.', 'ולכן 52 × 5 = 50 × 5 + 2 × 5.', 'בדיקה: 250 + 10 = 260.'],
+  }),
+  () => T({
+    type: 'teacher_dist_2', topic: 'distribute',
+    instruction: 'השלימו את המספר החסר:',
+    expr: '52 × 16 = 52 × 6 + 52 × ?', exprPlain: '52*16=52*6+52*x', answer: 10,
+    hint: 'שני החלקים ביחד צריכים להשלים 16.',
+    steps: ['16 − 6 = 10.', 'בדיקה: 52 × 6 + 52 × 10 = 312 + 520 = 832 = 52 × 16.'],
+  }),
+  () => T({
+    type: 'teacher_dist_3', topic: 'distribute',
+    instruction: 'השלימו את המספר החסר:',
+    expr: '52 × 16 = 52 × 9 + 52 × ?', exprPlain: '52*16=52*9+52*x', answer: 7,
+    hint: 'כמה חסר ל-9 כדי להגיע ל-16?',
+    steps: ['16 − 9 = 7.', 'בדיקה: 52 × 9 + 52 × 7 = 468 + 364 = 832.'],
+  }),
+  () => T({
+    type: 'teacher_dist_4', topic: 'distribute',
+    instruction: 'השלימו את המספר החסר:',
+    expr: '36 × 18 = 36 × 10 + 36 × ?', exprPlain: '36*18=36*10+36*x', answer: 8,
+    hint: 'כמה חסר ל-10 כדי להגיע ל-18?',
+    steps: ['18 − 10 = 8.', 'בדיקה: 360 + 288 = 648 = 36 × 18.'],
+  }),
+  () => T({
+    type: 'teacher_dist_5', topic: 'distribute',
+    instruction: 'השלימו את המספר החסר:',
+    expr: '36 × 18 = 36 × 11 + 36 × ?', exprPlain: '36*18=36*11+36*x', answer: 7,
+    hint: 'כמה חסר ל-11 כדי להגיע ל-18?',
+    steps: ['18 − 11 = 7.', 'בדיקה: 396 + 252 = 648.'],
+  }),
+
+  // --- סימני התחלקות ---
+  () => T({
+    type: 'teacher_div_1', topic: 'divisibility', ui: 'divisibility',
+    instruction: 'סמנו כל ספרה שמתאימה, כך שהמספר יתחלק ב-2:',
+    digitsShown: [5, null, 6], divisor: 2, validDigits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    expr: '5?6', answer: 0,
+    hint: DIVISIBILITY_RULES[2],
+    steps: [
+      DIVISIBILITY_RULES[2],
+      'ספרת האחדות כאן היא 6, והיא כבר זוגית.',
+      'לכן כל ספרה שנשים באמצע תתאים - כל עשר הספרות נכונות!',
+    ],
+  }),
+  () => T({
+    type: 'teacher_div_2', topic: 'divisibility', ui: 'divisibility',
+    instruction: 'סמנו כל ספרה שמתאימה, כך שהמספר יתחלק ב-6:',
+    digitsShown: [3, null, 2], divisor: 6, validDigits: [1, 4, 7],
+    expr: '3?2', answer: 1,
+    hint: DIVISIBILITY_RULES[6],
+    steps: [
+      DIVISIBILITY_RULES[6],
+      'ספרת האחדות היא 2, כלומר המספר כבר מתחלק ב-2.',
+      'נשאר לבדוק התחלקות ב-3: סכום הספרות הוא 3 + ? + 2 = 5 + ?.',
+      'כדי שהסכום יתחלק ב-3 צריך ש-? יהיה 1, 4 או 7 (סכום 6, 9 או 12).',
+      'בדיקה: 312 : 6 = 52, 342 : 6 = 57, 372 : 6 = 62.',
+    ],
+  }),
+
+  // --- תובנה מספרית ---
+  () => T({
+    type: 'teacher_insight_1', topic: 'insight', ui: 'explain',
+    instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
+    given: '45 × 18 = 810',
+    stage1: { kind: 'numeric', prompt: '90 × 18 = ?' },
+    answer: 1620,
+    explainQuestion: 'איך ידענו, בלי לחשב מחדש?',
+    options: [
+      { text: 'הגורם 45 גדל פי 2 (45 × 2 = 90), ולכן גם המכפלה גדלה פי 2.', correct: true },
+      { text: 'הגורם 45 גדל ב-45, ולכן מוסיפים 45 למכפלה.', correct: false },
+      { text: 'שני הגורמים השתנו, ולכן צריך לכפול הכול מחדש.', correct: false },
+    ],
+    hint: '90 זה פי 2 מ-45. מה קורה למכפלה?',
+    steps: ['90 = 45 × 2.', 'גורם אחד גדל פי 2, ולכן המכפלה גדלה פי 2.', '810 × 2 = 1,620.'],
+  }),
+  () => T({
+    type: 'teacher_insight_2', topic: 'insight', ui: 'explain',
+    instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
+    given: '45 × 18 = 810',
+    stage1: { kind: 'numeric', prompt: '45 × 9 = ?' },
+    answer: 405,
+    explainQuestion: 'איך ידענו, בלי לחשב מחדש?',
+    options: [
+      { text: 'הגורם 18 קטן פי 2 (18 : 2 = 9), ולכן גם המכפלה קטנה פי 2.', correct: true },
+      { text: 'הגורם 18 קטן ב-9, ולכן מחסירים 9 מהמכפלה.', correct: false },
+      { text: 'כשמקטינים גורם, המכפלה לא משתנה.', correct: false },
+    ],
+    hint: '9 זה חצי מ-18. מה קורה למכפלה?',
+    steps: ['9 = 18 : 2.', 'גורם אחד קטן פי 2, ולכן המכפלה קטנה פי 2.', '810 : 2 = 405.'],
+  }),
+  () => T({
+    type: 'teacher_insight_3', topic: 'insight', ui: 'explain',
+    instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
+    given: '15 × 18 = 270',
+    stage1: { kind: 'numeric', prompt: '15 × 18 × ? = 540' },
+    answer: 2,
+    explainQuestion: 'הסבירו כיצד נעזרתם בתרגיל הפתור, מבלי לחשב:',
+    options: [
+      { text: 'הגורמים בתרגיל זהים. גילינו שהמכפלה גדלה פי 2, ולכן נכפול בגורם 2.', correct: true },
+      { text: 'המכפלה גדלה ב-270, ולכן הגורם החסר הוא 270.', correct: false },
+      { text: 'צריך לחלק את 540 ב-15 וב-18 כדי למצוא את הגורם.', correct: false },
+    ],
+    hint: 'השוו בין 540 ל-270: פי כמה גדלה המכפלה?',
+    steps: ['540 : 270 = 2, כלומר המכפלה גדלה פי 2.', 'הגורמים 15 ו-18 לא השתנו.', 'לכן הגורם החסר הוא 2.'],
+  }),
+
+  // --- שאלת החולצות ---
+  () => T({
+    type: 'teacher_shirts', topic: 'word', ui: 'explain',
+    instruction: 'משימה:',
+    story: 'מחירן של חולצות בית ספר בחנות נע בין [[15]] ש"ח ל-[[25]] ש"ח. לאוריה יש [[80]] ש"ח. האם הכסף יספיק לה לקניית [[3]] חולצות?',
+    stage1: { kind: 'choice', prompt: 'מה התשובה?', choices: ['כן', 'לא', 'תלוי במחיר'] },
+    answer: 'כן',
+    explainQuestion: 'הסבירו:',
+    options: [
+      { text: 'גם במחיר היקר ביותר 3 חולצות עולות 75 ש"ח, ויש לאוריה 80 ש"ח - אז תמיד יספיק.', correct: true },
+      { text: '3 חולצות עולות 45 ש"ח, כי זה המחיר הזול ביותר בחנות.', correct: false },
+      { text: 'תלוי במחיר, כי אם כל חולצה תעלה 25 ש"ח לא יהיה מספיק כסף.', correct: false },
+    ],
+    hint: 'בדקו את המקרה הגרוע ביותר: מה אם כל החולצות עולות 25 ש"ח?',
+    steps: [
+      'המחיר היקר ביותר: 3 × 25 = 75 ש"ח.',
+      'המחיר הזול ביותר: 3 × 15 = 45 ש"ח.',
+      'לאוריה יש 80 ש"ח, וזה יותר מ-75, ולכן הכסף יספיק בכל מקרה.',
+    ],
+  }),
+
   () => T({
     type: 'teacher_word_3', topic: 'word', ui: 'mission',
     story: 'שירה קיבלה [[200]] שקלים מהוריה ליום הולדתה. חצי מהסכום היא חסכה, בחצי שנותר קנתה נעליים וחולצה במחיר זהה. כמה כסף עלתה החולצה?',
@@ -643,8 +1168,22 @@ export const TEACHER_QUESTIONS = [
   }),
 ];
 
-export function randomTeacherQuestion() {
-  return pick(TEACHER_QUESTIONS)();
+export function randomTeacherQuestion(topic = null) {
+  const pool = topic
+    ? TEACHER_QUESTIONS.filter((f) => f().topic === topic)
+    : TEACHER_QUESTIONS;
+  return pool.length ? pick(pool)() : null;
+}
+
+/** יצירת שאלה לפי מזהה סוג - מהגנרטורים או משאלות המורה */
+export function makeByType(type) {
+  const g = GENERATORS.find((x) => x.type === type);
+  if (g) return g.gen();
+  for (const f of TEACHER_QUESTIONS) {
+    const q = f();
+    if (q.type === type) return q;
+  }
+  return null;
 }
 
 /* ============================ בניית קרב ============================ */
@@ -658,34 +1197,57 @@ function topicWeight(stats, topicId) {
 }
 
 /**
- * בניית קרב של 5 שאלות.
- * מערבב נושאים, נותן משקל גבוה יותר לנושאים שבהם יש יותר טעויות,
- * ומשלב שאלה אחת מדף התרגול של המורה.
+ * בניית קרב.
+ * options: { count, topic }
+ *  - topic: קרב באזור מסוים. ללא topic - "קרב מעורב" שנותן משקל גבוה יותר
+ *    לנושאים שבהם יש יותר טעויות.
+ * שאלות שנענו לא נכון בעבר (תור החזרה) חוזרות עם מספרים חדשים.
  */
-export function buildBattle(saveState, count = 5) {
+export function buildBattle(saveState, options = {}) {
+  const opts = typeof options === 'number' ? { count: options } : options;
+  const count = opts.count || 5;
+  const topic = opts.topic || null;
   const stats = saveState?.stats;
   const questions = [];
   const usedTypes = new Set();
 
-  // שאלה אחת מדף המורה (בערך בכל קרב)
-  const teacherIndex = ri(0, count - 1);
+  const pool = topic ? GENERATORS.filter((g) => g.topic === topic) : GENERATORS;
+  const fallback = pool.length ? pool : GENERATORS;
 
-  for (let i = 0; i < count; i++) {
-    if (i === teacherIndex) {
-      questions.push(randomTeacherQuestion());
-      continue;
+  // 1. שאלות מתור החזרה - עד שתיים בקרב
+  const queue = Array.isArray(saveState?.reviewQueue) ? saveState.reviewQueue : [];
+  const relevant = shuffle(queue.filter((r) => !topic || r.topic === topic));
+  for (const entry of relevant.slice(0, 2)) {
+    const q = makeByType(entry.type);
+    if (q) {
+      q.fromReview = true;
+      questions.push(q);
+      usedTypes.add(q.type);
     }
+  }
+
+  // 2. שאלה מדף התרגול של המורה
+  if (questions.length < count) {
+    const tq = randomTeacherQuestion(topic);
+    if (tq && !usedTypes.has(tq.type)) {
+      questions.push(tq);
+      usedTypes.add(tq.type);
+    }
+  }
+
+  // 3. השלמה מהגנרטורים
+  while (questions.length < count) {
     let q = null;
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const g = weightedPick(GENERATORS, (x) => x.weight * topicWeight(stats, x.topic));
-      if (usedTypes.has(g.type) && attempt < 6) continue;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const g = weightedPick(fallback, (x) => x.weight * topicWeight(stats, x.topic));
+      if (usedTypes.has(g.type) && attempt < 7) continue;
       usedTypes.add(g.type);
       q = g.gen();
       break;
     }
-    if (!q) q = genMultTable();
+    if (!q) q = fallback[0].gen();
     questions.push(q);
   }
 
-  return shuffle(questions);
+  return shuffle(questions.slice(0, count));
 }

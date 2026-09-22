@@ -19,8 +19,12 @@ css/styles.css        עיצוב, כולל כללי RTL/LTR
 js/main.js            הפעלה, ניווט, גיבוי ושחזור
 js/storage.js         שמירה ב-localStorage, גרסאות ומיגרציה
 js/questions.js       מנוע השאלות - גנרטורים + שאלות המורה
-js/progress.js        מטבעות, ניסיון, דרגות, רצף וסטטיסטיקה
+js/exprtokens.js      ניתוח תרגיל לפי סדר פעולות
+js/qui.js             רכיבי הממשק של סוגי השאלות
+js/progress.js        מטבעות, ניסיון, דרגות, כוכבים, רצף וסטטיסטיקה
 js/battle.js          לולאת הקרב
+js/map.js             מפת העולם
+js/lightning.js       מיני משחק "מתקפת ברק"
 js/avatar.js          ציור הלוחם והדרקון (SVG שכבתי)
 js/monsters.js        המפלצות
 js/shop.js            קטלוג הציוד

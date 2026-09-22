@@ -6,6 +6,7 @@ import {
 import {
   $, showScreen, backTarget, getCurrentScreen, updateHUD, toast, modal, renderHome,
   renderShop, renderArmory, renderColorPicker, refreshStorageWarning, answerInput,
+  renderParentStats,
 } from './ui.js';
 import { mountAvatar, COLOR_CHOICES } from './avatar.js';
 import { startBattle, bindBattleButtons, isBattleActive, abandonBattle } from './battle.js';
@@ -72,6 +73,57 @@ function goHome() {
   showScreen('home');
 }
 
+/**
+ * שער הכניסה למסך ההורים: לחיצה ארוכה של 3 שניות.
+ * פשוט מספיק למבוגר, ולא משהו שילד ילחץ עליו בטעות באמצע משחק.
+ */
+const HOLD_MS = 3000;
+
+function initParentGate() {
+  const btn = $('#btn-settings');
+  const fill = $('#hold-fill');
+  let timer = null;
+  let start = 0;
+  let raf = null;
+
+  const stop = () => {
+    clearTimeout(timer);
+    cancelAnimationFrame(raf);
+    timer = null;
+    fill.style.width = '0%';
+  };
+
+  const tick = () => {
+    const p = Math.min(1, (Date.now() - start) / HOLD_MS);
+    fill.style.width = `${p * 100}%`;
+    if (p < 1) raf = requestAnimationFrame(tick);
+  };
+
+  const begin = (e) => {
+    if (timer) return;
+    e.preventDefault();
+    start = Date.now();
+    raf = requestAnimationFrame(tick);
+    timer = setTimeout(() => {
+      stop();
+      openParent();
+    }, HOLD_MS);
+  };
+
+  btn.addEventListener('pointerdown', begin);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
+  // מקלדת: רווח/אנטר פותחים ישירות, כי אין בהם "לחיצה ארוכה"
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openParent(); }
+  });
+}
+
+function openParent() {
+  renderParentStats();
+  refreshStorageWarning();
+  showScreen('settings');
+}
+
 function openMap() {
   renderMap((topic) => startBattle({ topic }));
   showScreen('map');
@@ -112,10 +164,7 @@ function initNav() {
     showScreen('armory');
   });
 
-  $('#btn-settings').addEventListener('click', () => {
-    refreshStorageWarning();
-    showScreen('settings');
-  });
+  initParentGate();
 
   $('#btn-summary-home').addEventListener('click', goHome);
   $('#btn-summary-shop').addEventListener('click', () => {

@@ -85,8 +85,9 @@
           <button id="btn-armory" class="btn btn-secondary btn-xl" type="button">
             <span class="btn-emoji">🛡️</span> חדר הנשק
           </button>
-          <button id="btn-settings" class="btn btn-ghost" type="button">
-            <span class="btn-emoji">⚙️</span> הגדרות וגיבוי
+          <button id="btn-settings" class="btn btn-ghost hold-btn" type="button">
+            <span class="hold-fill" id="hold-fill"></span>
+            <span class="hold-label"><span class="btn-emoji">⚙️</span> למבוגרים - לחיצה ארוכה של 3 שניות</span>
           </button>
         </div>
 
@@ -181,8 +182,10 @@
 
     <!-- ===== הגדרות וגיבוי ===== -->
     <section id="screen-settings" class="screen" hidden>
+      <div id="parent-stats"></div>
+
       <div class="card settings-card">
-        <h2 class="title-mid">הגדרות וגיבוי</h2>
+        <h2 class="title-mid">גיבוי ושחזור</h2>
         <p class="subtitle">שומרים את ההתקדמות כדי שלא תאבד.</p>
 
         <div class="settings-group">

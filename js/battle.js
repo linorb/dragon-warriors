@@ -10,7 +10,7 @@ import {
 } from './ui.js';
 import {
   REWARDS, addCoins, addXp, recordAnswer, pushToReview, clearFromReview, touchDailyStreak,
-  bumpSessions, markPerfect, dragonStageFor,
+  bumpSessions, markPerfect, dragonStageFor, hasShape, addShape, shapeList,
 } from './progress.js';
 import { fmt, esc, wrapMath } from './util.js';
 
@@ -57,6 +57,7 @@ function questionContext() {
     toast,
     setKeypad: setKeypadVisible,
     verdict: (v) => handleVerdict(v),
+    shapes: { has: hasShape, add: addShape, list: shapeList },
   };
 }
 
@@ -123,6 +124,7 @@ function attackAnimation(damage) {
 
 function setHp(hp) {
   $('#hp-fill').style.width = `${Math.max(0, (hp / MONSTER_MAX_HP) * 100)}%`;
+  if (hp <= 0) setTimeout(() => $('#monster-art').classList.add('defeated'), 500);
 }
 
 /* ============================ פסק דין ============================ */
@@ -201,7 +203,7 @@ function handleVerdict(v) {
   battle.xp += REWARDS.xpEffort;
   updateHUD();
 
-  const answerText = typeof q.answer === 'number' ? fmt(q.answer) : String(q.answer);
+  const answerText = q.answerText || (typeof q.answer === 'number' ? fmt(q.answer) : String(q.answer));
   showFeedback('solve', 'בוא נפתור את זה יחד, שלב אחר שלב:',
     `${stepsHtml(q.steps)}<div class="fb-extra">התשובה הנכונה: <span class="num">${esc(answerText)}</span>. השאלה הזו תחזור אלינו בקרב הבא כדי להתאמן עליה שוב. 💪</div>`);
   endOfQuestion();
@@ -329,6 +331,7 @@ export function startBattle(options = {}) {
 
   $('#monster-name').textContent = monster.name;
   $('#monster-art').innerHTML = monster.art();
+  $('#monster-art').classList.remove('defeated');
   setHp(battle.hp);
 
   mountAvatar($('#battle-avatar'), {

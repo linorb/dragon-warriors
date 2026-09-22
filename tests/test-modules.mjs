@@ -63,6 +63,28 @@ const { CATALOG, SLOTS, TIERS } = mods.shop;
     check(`שכבת ${slot.id} מצוירת`, full.includes(`layer-${slot.id}`));
   }
 
+  // באותו דף מצוירים כמה SVG יחד. מזהים כפולים גורמים לדפדפן לקשר את כולם
+  // לראשון, ואז חלקים בדמות נעלמים (למשל הגוף כשאין שריון).
+  {
+    const page = [
+      renderAvatar({ color: '#59a9ff', equipped: {}, dragonStage: 1 }),
+      renderAvatar({ color: '#ff6b6b', equipped: { aura: 'au_fire' }, dragonStage: 2 }),
+      ...CATALOG.map((i) => itemArt(i.slot, i.id, '#59a9ff')),
+    ].join('\n');
+    const ids = Array.from(page.matchAll(/\sid="([^"]+)"/g)).map((m) => m[1]);
+    check('כל מזהי ה-SVG בדף ייחודיים', ids.length > 0 && new Set(ids).size === ids.length,
+      `${ids.length} מזהים, ${new Set(ids).size} ייחודיים`);
+
+    const refs = Array.from(page.matchAll(/url\(#([^)]+)\)/g)).map((m) => m[1]);
+    check('כל הפניה לגרדיאנט מצביעה על מזהה קיים', refs.every((r) => ids.includes(r)),
+      refs.filter((r) => !ids.includes(r)).join(','));
+
+    // הגוף חייב להיות מצויר גם בלי שריון
+    const bare = renderAvatar({ color: '#59a9ff', equipped: {}, dragonStage: 0 });
+    const tunicRef = (bare.match(/url\(#([^)]+)\)/) || [])[1];
+    check('גוף הלוחם מצויר גם ללא שריון', Boolean(tunicRef) && bare.includes(`id="${tunicRef}"`));
+  }
+
   check('4 שלבי דרקון', DRAGON_STAGES.length === 4);
   check('יש בחירת צבעים', COLOR_CHOICES.length >= 6);
 

@@ -98,7 +98,8 @@ check('parseNum(fmt(x)) === x', [0, 7, 999, 1000, 123456].every((n) => parseNum(
 /* ---------- 2. תקינות כללית של כל גנרטור ---------- */
 
 const RUNS = 250;
-const NO_EXPR_UIS = ['numberline_fill', 'numberline_locate', 'divisibility', 'explain'];
+const NO_EXPR_UIS = ['numberline_fill', 'numberline_locate', 'divisibility', 'explain',
+  'frac_color', 'frac_sort', 'frac_add', 'quiz', 'chart', 'geo'];
 
 for (const gen of GENERATORS) {
   let structureOk = true;
@@ -171,6 +172,62 @@ for (const gen of GENERATORS) {
           }
         }
         if (!q.validDigits.length) { mathOk = false; badDetail = 'אין אף ספרה מתאימה'; }
+      } else if (q.ui === 'frac_color') {
+        if (q.target > q.shapes * q.parts || q.target < 1) { mathOk = false; badDetail = 'אי אפשר לצבוע כל כך הרבה חלקים'; }
+        if (q.fraction.num !== q.target || q.fraction.den !== q.parts) { mathOk = false; badDetail = 'השבר לא תואם את הצורה'; }
+        if (q.followUp) {
+          const whole = Math.floor(q.target / q.parts);
+          if (q.followUp.answer !== whole) { mathOk = false; badDetail = `מספר השלמים ${q.followUp.answer} במקום ${whole}`; }
+          if (q.shapes < whole) { mathOk = false; badDetail = 'אין מספיק צורות לצביעה'; }
+        }
+      } else if (q.ui === 'frac_sort') {
+        if (q.cards.length < 4) { mathOk = false; badDetail = 'מעט מדי קלפים'; }
+        for (const card of q.cards) {
+          const isHalf = card.num * 2 === card.den;
+          const isBetween = card.num > card.den && card.num < card.den * 2;
+          const expected = q.type === 'frac_sort_half' || q.bins[0] === 'שווה לחצי'
+            ? (isHalf ? 0 : 1)
+            : (isBetween ? 0 : 1);
+          if (card.bin !== expected) {
+            mathOk = false; badDetail = `${card.num}/${card.den} מוין לתיבה ${card.bin}`;
+          }
+        }
+        if (!q.cards.some((c) => c.bin === 0) || !q.cards.some((c) => c.bin === 1)) {
+          mathOk = false; badDetail = 'אחת התיבות ריקה';
+        }
+      } else if (q.ui === 'frac_add') {
+        if (q.left + q.right !== q.total) { mathOk = false; badDetail = 'המונים לא מסתדרים'; }
+        if (q.total > q.den) { mathOk = false; badDetail = 'הסכום גדול משלם'; }
+        const want = q.missing === 'result' ? q.total : q.right;
+        if (q.answer !== want) { mathOk = false; badDetail = 'התשובה לא תואמת את החסר'; }
+      } else if (q.ui === 'quiz') {
+        if (q.options.length < 3) { mathOk = false; badDetail = 'מעט מדי אפשרויות'; }
+        if (q.options.filter((o) => o.correct).length !== 1) { mathOk = false; badDetail = 'צריך בדיוק תשובה נכונה אחת'; }
+        if (q.options.find((o) => o.correct).text !== q.answer) { mathOk = false; badDetail = 'answer לא תואם לאפשרות הנכונה'; }
+        if (new Set(q.options.map((o) => o.text)).size !== q.options.length) { mathOk = false; badDetail = 'אפשרויות כפולות'; }
+      } else if (q.ui === 'chart') {
+        const v = q.chart.values;
+        const options = new Set([
+          ...v,
+          Math.max(...v) - Math.min(...v),
+          v.reduce((s, x) => s + x, 0),
+          ...v.flatMap((a, k) => v.map((b) => Math.abs(a - b))),
+        ]);
+        if (!options.has(q.answer)) { mathOk = false; badDetail = `תשובה ${q.answer} לא נגזרת מהדיאגרמה`; }
+        if (q.chart.labels.length !== v.length) { mathOk = false; badDetail = 'מספר התוויות לא תואם'; }
+      } else if (q.ui === 'geo') {
+        if (q.mode === 'pick_side') {
+          if (q.answerIndex !== (q.highlighted + 2) % 4) { mathOk = false; badDetail = 'הצלע המקבילה אינה זו שממול'; }
+          if (q.corners.length !== 4) { mathOk = false; badDetail = 'המלבן לא מוגדר'; }
+        } else {
+          if (!q.goal || !q.goal.kind) { mathOk = false; badDetail = 'אין מטרה לשאלה'; }
+          if (q.points < 3 || q.points > 4) { mathOk = false; badDetail = 'מספר נקודות לא הגיוני'; }
+          if (q.goal.kind === 'triangle' && q.points !== 3) { mathOk = false; badDetail = 'משולש צריך 3 נקודות'; }
+          if (q.goal.kind === 'quad' && q.points !== 4) { mathOk = false; badDetail = 'מרובע צריך 4 נקודות'; }
+          if (q.goal.sides === 'equilateral' && q.grid.kind !== 'tri') {
+            mathOk = false; badDetail = 'משולש שווה צלעות דורש רשת משולשת';
+          }
+        }
       } else if (q.ui === 'explain') {
         const correct = q.options.filter((o) => o.correct);
         if (q.options.length !== 3) { mathOk = false; badDetail = 'צריך בדיוק 3 הסברים'; }
@@ -343,6 +400,16 @@ const TEACHER_EXPECTED = {
   teacher_div_1: 0, teacher_div_2: 1,
   teacher_insight_1: 1620, teacher_insight_2: 405, teacher_insight_3: 2,
   teacher_shirts: 'כן',
+  teacher_frac_1: '3/4', teacher_frac_2: 'מיון נכון', teacher_frac_3: 'מיון נכון', teacher_frac_4: 4,
+  teacher_geo_1: 'הצלע שמול הצלע המודגשת',
+  teacher_geo_2: 'ריבוע או מעוין',
+  teacher_geo_3: 'מקבילית',
+  teacher_geo_4: 'משולש קהה זווית',
+  teacher_geo_5: 'משולש שווה צלעות',
+  teacher_geo_6: 'משולש ישר זווית ושווה שוקיים',
+  teacher_geo_7: 'מלבן ששטחו 18',
+  teacher_geo_8: 'מלבן שהיקפו 18',
+  teacher_chart: 25,
 };
 
 let teacherOk = true;

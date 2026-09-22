@@ -37,22 +37,58 @@ export const COLOR_CHOICES = [
 /* ============================ שכבות ציוד ============================ */
 // כל פונקציה מחזירה מחרוזת SVG. c = צבע הבסיס של השחקן.
 
+// הקסדה יושבת מעל גובה העיניים, ומגני הלחיים יורדים רק בצדדים - כדי שהפנים יישארו גלויות
 const HELMETS = {
   h_iron: () => `
     <g class="layer-helmet">
-      <path d="M112 52c-27 0-44 19-44 42v10h88V94c0-23-17-42-44-42z" fill="#9aa5b1"/>
-      <path d="M112 52c-27 0-44 19-44 42v10h14V94c0-19 12-33 30-33z" fill="#c3ccd6"/>
-      <rect x="106" y="60" width="12" height="46" rx="6" fill="#7b8794"/>
-      <rect x="66" y="100" width="92" height="9" rx="4" fill="#6b7682"/>
+      <path d="M112 50c-24 0-42 15-42 32v4h84v-4c0-17-18-32-42-32z" fill="#9aa5b1"/>
+      <path d="M112 50c-24 0-42 15-42 32v4h13v-4c0-15 12-27 29-28z" fill="#c3ccd6"/>
+      <path d="M70 84v15c0 7 5 11 11 11h5V84z" fill="#8994a1"/>
+      <path d="M154 84v15c0 7-5 11-11 11h-5V84z" fill="#8994a1"/>
+      <rect x="106" y="80" width="12" height="15" rx="5" fill="#7b8794"/>
+      <rect x="66" y="76" width="92" height="10" rx="5" fill="#6b7682"/>
     </g>`,
   h_wing: (c) => `
     <g class="layer-helmet">
-      <path d="M112 50c-28 0-45 20-45 44v9h90v-9c0-24-17-44-45-44z" fill="${shade(c, -0.15)}"/>
-      <path d="M112 50c-28 0-45 20-45 44v9h13v-9c0-20 13-35 32-35z" fill="${shade(c, 0.35)}"/>
-      <rect x="105" y="58" width="14" height="48" rx="7" fill="${shade(c, -0.4)}"/>
-      <path d="M67 84c-16-10-28-8-34-2 10 2 12 6 10 12 10 4 20 2 26-4z" fill="#f2f5ff"/>
-      <path d="M157 84c16-10 28-8 34-2-10 2-12 6-10 12-10 4-20 2-26-4z" fill="#f2f5ff"/>
-      <rect x="65" y="99" width="94" height="9" rx="4" fill="${shade(c, -0.45)}"/>
+      <path d="M112 48c-25 0-43 15-43 33v4h86v-4c0-18-18-33-43-33z" fill="${shade(c, -0.15)}"/>
+      <path d="M112 48c-25 0-43 15-43 33v4h13v-4c0-16 13-28 30-29z" fill="${shade(c, 0.35)}"/>
+      <path d="M69 83v14c0 7 5 11 11 11h5V83z" fill="${shade(c, -0.3)}"/>
+      <path d="M155 83v14c0 7-5 11-11 11h-5V83z" fill="${shade(c, -0.3)}"/>
+      <path d="M69 70c-16-10-28-8-34-2 10 2 12 6 10 12 10 4 20 2 26-4z" fill="#f2f5ff"/>
+      <path d="M155 70c16-10 28-8 34-2-10 2-12 6-10 12-10 4-20 2-26-4z" fill="#f2f5ff"/>
+      <rect x="105" y="78" width="14" height="16" rx="6" fill="${shade(c, -0.45)}"/>
+      <rect x="65" y="75" width="94" height="10" rx="5" fill="${shade(c, -0.45)}"/>
+    </g>`,
+  h_horn: () => `
+    <g class="layer-helmet">
+      <path d="M112 50c-24 0-42 15-42 32v4h84v-4c0-17-18-32-42-32z" fill="#6f5a45"/>
+      <path d="M112 50c-24 0-42 15-42 32v4h13v-4c0-15 12-27 29-28z" fill="#8d7359"/>
+      <path d="M72 62c-12-10-24-10-32-4 10 4 14 12 12 22 10 2 18-6 20-18z" fill="#f0e6d2"/>
+      <path d="M152 62c12-10 24-10 32-4-10 4-14 12-12 22-10 2-18-6-20-18z" fill="#f0e6d2"/>
+      <path d="M70 84v15c0 7 5 11 11 11h5V84z" fill="#5c4a38"/>
+      <path d="M154 84v15c0 7-5 11-11 11h-5V84z" fill="#5c4a38"/>
+      <rect x="66" y="76" width="92" height="10" rx="5" fill="#4a3a2b"/>
+    </g>`,
+  h_dragon: (c) => `
+    <g class="layer-helmet">
+      <path d="M112 48c-25 0-43 16-43 34v4h86v-4c0-18-18-34-43-34z" fill="${shade(c, -0.35)}"/>
+      <path d="M112 48c-25 0-43 16-43 34v4h13v-4c0-16 13-29 30-30z" fill="${shade(c, 0.1)}"/>
+      <path d="M112 34c5 8 7 16 6 24h-12c-1-8 1-16 6-24z" fill="#ff8a3d"/>
+      <path d="M96 44l-6-12 14 8zM128 44l6-12-14 8z" fill="#ff8a3d"/>
+      <path d="M69 84v15c0 7 5 11 11 11h6V84z" fill="${shade(c, -0.5)}"/>
+      <path d="M155 84v15c0 7-5 11-11 11h-6V84z" fill="${shade(c, -0.5)}"/>
+      <rect x="65" y="76" width="94" height="10" rx="5" fill="${shade(c, -0.55)}"/>
+      <circle cx="86" cy="70" r="4" fill="#ffcc4d"/>
+      <circle cx="138" cy="70" r="4" fill="#ffcc4d"/>
+    </g>`,
+  h_crown: () => `
+    <g class="layer-helmet">
+      <path d="M70 84V56l14 12 12-18 16 16 16-16 12 18 14-12v28z" fill="#ffcc4d"/>
+      <path d="M70 84V56l14 12 12-18 4 6v28z" fill="#ffe08a"/>
+      <rect x="66" y="80" width="92" height="12" rx="6" fill="#e0a213"/>
+      <circle cx="84" cy="62" r="5" fill="#ff6b6b"/>
+      <circle cx="112" cy="54" r="6" fill="#59a9ff"/>
+      <circle cx="140" cy="62" r="5" fill="#4ddb8b"/>
     </g>`,
 };
 
@@ -69,6 +105,31 @@ const ARMORS = {
       <path d="M112 130c-18 0-30 6-36 14l-5 34h16l3-30c3-10 11-16 22-17z" fill="#e2e9f1"/>
       <path d="M76 180h72l3 20H73z" fill="#93a0ad"/>
       <path d="M112 142l12 14-12 16-12-16z" fill="#6f7d8c"/>
+    </g>`,
+  a_forest: () => `
+    <g class="layer-armor">
+      <path d="M112 132c-16 0-27 5-33 12l-4 30h74l-4-30c-6-7-17-12-33-12z" fill="#3f7d4a"/>
+      <path d="M78 176h68l3 22H75z" fill="#356840"/>
+      <path d="M112 146c6 4 9 10 8 16-7 1-12-3-14-9 1-3 3-5 6-7z" fill="#7ee0a3"/>
+      <path d="M104 160c-5-1-9-5-9-10 5-2 10 0 12 5z" fill="#7ee0a3"/>
+    </g>`,
+  a_scale: (c) => `
+    <g class="layer-armor">
+      <path d="M112 130c-18 0-30 6-36 14l-5 34h82l-5-34c-6-8-18-14-36-14z" fill="${shade(c, -0.3)}"/>
+      ${[0, 1, 2].map((row) => [0, 1, 2, 3, 4].map((col) => {
+    const x = 80 + col * 13 + (row % 2 ? 6 : 0);
+    const y = 142 + row * 13;
+    return `<path d="M${x} ${y}a7 7 0 0 1 12 0c0 6-6 10-6 10s-6-4-6-10z" fill="${shade(c, 0.15)}" opacity=".9"/>`;
+  }).join('')).join('')}
+      <path d="M76 180h72l3 20H73z" fill="${shade(c, -0.5)}"/>
+    </g>`,
+  a_gold: () => `
+    <g class="layer-armor">
+      <path d="M112 128c-19 0-32 7-38 15l-5 36h86l-5-36c-6-8-19-15-38-15z" fill="#e0a213"/>
+      <path d="M112 128c-19 0-32 7-38 15l-5 36h16l4-32c3-11 12-17 23-18z" fill="#ffe08a"/>
+      <path d="M74 180h76l3 20H71z" fill="#b8820c"/>
+      <path d="M112 140l14 12-6 18h-16l-6-18z" fill="#fff3c4"/>
+      <circle cx="112" cy="158" r="5" fill="#ff6b6b"/>
     </g>`,
 };
 
@@ -97,6 +158,41 @@ const WEAPONS = {
       <circle cx="52.5" cy="203" r="7" fill="#ff6a2b"/>
       <circle cx="52.5" cy="203" r="3" fill="#ffe9a8"/>
     </g>`,
+  w_spear: () => `
+    <g class="layer-weapon">
+      <rect x="49" y="86" width="7" height="116" rx="3" fill="#7a5a32"/>
+      <path d="M52.5 74l9 20h-18z" fill="#cfd8e3"/>
+      <path d="M52.5 74l9 20h-9z" fill="#9aa5b1"/>
+      <rect x="43" y="96" width="19" height="6" rx="3" fill="#c79b4e"/>
+      <path d="M52.5 208l-5-8h10z" fill="#9aa5b1"/>
+    </g>`,
+  w_hammer: () => `
+    <g class="layer-weapon">
+      <rect x="48" y="104" width="9" height="98" rx="4" fill="#6b4b25"/>
+      <rect x="32" y="82" width="42" height="30" rx="7" fill="#8994a1"/>
+      <rect x="32" y="82" width="42" height="11" rx="5" fill="#b9c4d0"/>
+      <rect x="36" y="94" width="10" height="8" rx="2" fill="#6b7682"/>
+      <circle cx="52.5" cy="206" r="7" fill="#4a3318"/>
+    </g>`,
+  w_ice: () => `
+    <g class="layer-weapon">
+      <path d="M52.5 78c9 14 11 28 8 42l-4 48h-9l-4-48c-3-14-1-28 9-42z" fill="#9fe3ff"/>
+      <path d="M52.5 78c6 14 7 26 5 38-3-11-6-18-10-24z" fill="#e8f9ff"/>
+      <path d="M38 96l-10-8 12 2zM67 96l10-8-12 2z" fill="#cdeeff"/>
+      <rect x="36" y="168" width="33" height="9" rx="4" fill="#3d7ea6"/>
+      <rect x="48" y="177" width="9" height="22" rx="4" fill="#2a5b7a"/>
+      <circle cx="52.5" cy="203" r="7" fill="#9fe3ff"/>
+    </g>`,
+  w_legend: () => `
+    <g class="layer-weapon">
+      <path d="M52.5 66l7 16-3 88h-8l-3-88z" fill="#fff3c4"/>
+      <path d="M52.5 66l7 16-3 88h-4z" fill="#ffcc4d"/>
+      <path d="M30 168h45l-6 12H36z" fill="#b8820c"/>
+      <rect x="48" y="180" width="9" height="20" rx="4" fill="#7a5408"/>
+      <circle cx="52.5" cy="204" r="8" fill="#ffcc4d"/>
+      <circle cx="52.5" cy="204" r="4" fill="#fff3c4"/>
+      <path d="M40 96l-8-6 9 1zM65 96l8-6-9 1zM40 126l-8-6 9 1zM65 126l8-6-9 1z" fill="#ffe08a"/>
+    </g>`,
 };
 
 const SHIELDS = {
@@ -111,6 +207,26 @@ const SHIELDS = {
       <path d="M170 114c15 0 28 4 28 4v36c0 24-15 37-28 43-13-6-28-19-28-43v-36s13-4 28-4z" fill="${shade(c, -0.3)}"/>
       <path d="M170 124c10 0 19 3 19 3v28c0 17-10 26-19 31-9-5-19-14-19-31v-28s9-3 19-3z" fill="${shade(c, 0.25)}"/>
       <path d="M170 134c6 8 12 10 16 9-4 6-4 12 0 18-8 2-12 8-16 14-4-6-8-12-16-14 4-6 4-12 0-18 4 1 10-1 16-9z" fill="${shade(c, -0.5)}"/>
+    </g>`,
+  s_round: () => `
+    <g class="layer-shield">
+      <circle cx="170" cy="156" r="32" fill="#8a5a33"/>
+      <circle cx="170" cy="156" r="25" fill="#a97544"/>
+      <circle cx="170" cy="156" r="10" fill="#c9d3dd"/>
+      <circle cx="170" cy="156" r="4" fill="#6b7682"/>
+    </g>`,
+  s_steel: () => `
+    <g class="layer-shield">
+      <path d="M170 116c16 0 29 4 29 4v34c0 24-15 38-29 44-14-6-29-20-29-44v-34s13-4 29-4z" fill="#8994a1"/>
+      <path d="M170 116c16 0 29 4 29 4v34c0 24-15 38-29 44V116z" fill="#6f7d8c"/>
+      <path d="M170 128l9 16-9 14-9-14z" fill="#e2e9f1"/>
+      <path d="M148 130h44v6h-44z" fill="#c9d3dd" opacity=".7"/>
+    </g>`,
+  s_star: () => `
+    <g class="layer-shield">
+      <path d="M170 112c16 0 30 4 30 4v36c0 25-16 39-30 46-14-7-30-21-30-46v-36s14-4 30-4z" fill="#e0a213"/>
+      <path d="M170 122c11 0 21 3 21 3v28c0 18-11 28-21 33-10-5-21-15-21-33v-28s10-3 21-3z" fill="#ffe08a"/>
+      <path d="M170 134l6 13 14 1-11 9 4 14-13-8-13 8 4-14-11-9 14-1z" fill="#b8820c"/>
     </g>`,
 };
 
@@ -135,12 +251,32 @@ const CAPES = {
       <circle cx="66" cy="222" r="2.2" fill="#ffe9a8"/>
       <circle cx="128" cy="176" r="2" fill="#ffe9a8"/>
     </g>`,
+  c_leaf: () => `
+    <g class="layer-cape">
+      <path d="${CAPE_PATH}" fill="#3f7d4a"/>
+      <path d="${CAPE_FOLD}" fill="#59a06a"/>
+      <path d="M100 170c8 5 11 14 9 22-9 1-16-5-18-14 2-4 5-7 9-8z" fill="#7ee0a3" opacity=".8"/>
+      <path d="M130 205c8 5 11 14 9 22-9 1-16-5-18-14 2-4 5-7 9-8z" fill="#7ee0a3" opacity=".6"/>
+    </g>`,
+  c_flame: () => `
+    <g class="layer-cape">
+      <path d="${CAPE_PATH}" fill="#a83214"/>
+      <path d="${CAPE_FOLD}" fill="#d14a20"/>
+      <path d="M60 238c8-14 8-26 4-34 14 8 20 22 14 34zM110 244c8-14 8-26 4-34 14 8 20 22 14 34zM152 238c8-14 8-26 4-34 14 8 20 22 14 34z" fill="#ff8a3d"/>
+    </g>`,
+  c_royal: () => `
+    <g class="layer-cape">
+      <path d="${CAPE_PATH}" fill="#5b2a8c"/>
+      <path d="${CAPE_FOLD}" fill="#7b45d6"/>
+      <path d="M52 230c30 12 88 12 120 0l3 10c-32 12-94 12-126 0z" fill="#ffe08a"/>
+      <path d="M112 160l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z" fill="#ffcc4d"/>
+    </g>`,
 };
 
 const AURAS = {
-  au_fire: () => `
+  au_fire: (c, uid) => `
     <g class="layer-aura" opacity="0.9">
-      <ellipse cx="112" cy="170" rx="104" ry="126" fill="url(#auraFire)"/>
+      <ellipse cx="112" cy="170" rx="104" ry="126" fill="url(#auraFire-${uid})"/>
       <ellipse cx="112" cy="170" rx="100" ry="122" fill="none" stroke="#ffb648" stroke-opacity=".45" stroke-width="4"/>
       <g fill="#ffb648" opacity=".8">
         <path d="M24 250c6-14 4-26-2-34 14 4 22 16 20 34z"/>
@@ -148,6 +284,35 @@ const AURAS = {
         <path d="M112 34c6-12 4-22-2-30 14 4 22 14 20 30z"/>
         <path d="M12 130c10-8 14-18 12-28 12 10 14 24 4 34z"/>
         <path d="M212 130c-10-8-14-18-12-28-12 10-14 24-4 34z"/>
+      </g>
+    </g>`,
+  au_leaf: (c, uid) => `
+    <g class="layer-aura" opacity="0.9">
+      <ellipse cx="112" cy="170" rx="104" ry="126" fill="url(#auraLeaf-${uid})"/>
+      <ellipse cx="112" cy="170" rx="100" ry="122" fill="none" stroke="#7ee0a3" stroke-opacity=".4" stroke-width="3"/>
+      <g fill="#7ee0a3" opacity=".85">
+        <path d="M22 210c10-6 14-16 12-26 12 8 14 22 4 30z"/>
+        <path d="M202 210c-10-6-14-16-12-26-12 8-14 22-4 30z"/>
+        <path d="M112 42c10-6 14-16 12-26 12 8 14 22 4 30z"/>
+        <path d="M40 92c10-6 14-16 12-26 12 8 14 22 4 30z"/>
+      </g>
+    </g>`,
+  au_ice: (c, uid) => `
+    <g class="layer-aura" opacity="0.9">
+      <ellipse cx="112" cy="170" rx="104" ry="126" fill="url(#auraIce-${uid})"/>
+      <ellipse cx="112" cy="170" rx="100" ry="122" fill="none" stroke="#9fe3ff" stroke-opacity=".5" stroke-width="3"/>
+      <g stroke="#e8f9ff" stroke-width="3" stroke-linecap="round" opacity=".9">
+        <path d="M20 140v18M12 149h16M196 200v18M188 209h16M112 26v18M104 35h16M30 236v14M24 243h12"/>
+      </g>
+    </g>`,
+  au_storm: (c, uid) => `
+    <g class="layer-aura" opacity="0.95">
+      <ellipse cx="112" cy="170" rx="106" ry="128" fill="url(#auraStorm-${uid})"/>
+      <ellipse cx="112" cy="170" rx="101" ry="123" fill="none" stroke="#c79bff" stroke-opacity=".55" stroke-width="4"/>
+      <g fill="#ffcc4d">
+        <path d="M26 120l14-30-4 20 12-4-18 34 4-20z"/>
+        <path d="M196 230l-14-30 4 20-12-4 18 34-4-20z"/>
+        <path d="M112 20l14-24-4 16 12-4-18 30 4-18z"/>
       </g>
     </g>`,
 };
@@ -171,12 +336,21 @@ const ITEM_VIEWBOX = {
   aura: '2 38 220 224',
 };
 
+/**
+ * מזהה ייחודי לכל SVG שמצויר.
+ * חובה: בדף אחד יש כמה ציורים (דמות, פריטי חנות, חדר הנשק), ואם לכולם יהיה
+ * אותו מזהה גרדיאנט - הדפדפן יקשר את כולם לראשון, וחלקים שלמים בדמות ייעלמו.
+ */
+let svgSeq = 0;
+const nextUid = () => `dw${++svgSeq}`;
+
 /** ציור פריט בודד (לשימוש בחנות ובחדר הנשק) */
 export function itemArt(slot, id, color = '#59a9ff') {
   const set = SLOT_SETS[slot];
   if (!set || !set[id]) return '';
   const box = ITEM_VIEWBOX[slot] || '0 0 240 300';
-  return `<svg viewBox="${box}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${defs(color)}${set[id](color)}</svg>`;
+  const uid = nextUid();
+  return `<svg viewBox="${box}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${defs(color, uid)}${set[id](color, uid)}</svg>`;
 }
 
 /* ============================ הדרקון ============================ */
@@ -226,22 +400,24 @@ function dragon(stage, c) {
 
 /* ============================ הרכבת הדמות ============================ */
 
-function defs(c) {
+function defs(c, uid) {
   return `
     <defs>
-      <linearGradient id="tunicG" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="tunicG-${uid}" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="${shade(c, 0.28)}"/>
         <stop offset="100%" stop-color="${shade(c, -0.22)}"/>
       </linearGradient>
-      <radialGradient id="auraFire" cx="50%" cy="50%" r="50%">
-        <stop offset="55%" stop-color="#ff9d3d" stop-opacity="0"/>
-        <stop offset="85%" stop-color="#ff9d3d" stop-opacity=".45"/>
-        <stop offset="100%" stop-color="#ffdf8a" stop-opacity="0"/>
-      </radialGradient>
+      ${[['auraFire', '#ff9d3d', '#ffdf8a'], ['auraLeaf', '#4ddb8b', '#d6ffe8'],
+    ['auraIce', '#69c8ff', '#e8f9ff'], ['auraStorm', '#b57bff', '#ffe08a']].map(([id, mid, out]) => `
+      <radialGradient id="${id}-${uid}" cx="50%" cy="50%" r="50%">
+        <stop offset="55%" stop-color="${mid}" stop-opacity="0"/>
+        <stop offset="85%" stop-color="${mid}" stop-opacity=".45"/>
+        <stop offset="100%" stop-color="${out}" stop-opacity="0"/>
+      </radialGradient>`).join('')}
     </defs>`;
 }
 
-function baseBody(c) {
+function baseBody(c, uid) {
   const skin = '#f2c79b';
   const skinDark = '#d9a678';
   return `
@@ -251,7 +427,7 @@ function baseBody(c) {
       <rect x="117" y="206" width="21" height="58" rx="10" fill="#4a3826"/>
       <rect x="84" y="252" width="30" height="20" rx="8" fill="#33241a"/>
       <rect x="114" y="252" width="30" height="20" rx="8" fill="#33241a"/>
-      <path d="M112 126c-19 0-32 9-37 24l-8 44c-2 11 5 18 16 18h58c11 0 18-7 16-18l-8-44c-5-15-18-24-37-24z" fill="url(#tunicG)"/>
+      <path d="M112 126c-19 0-32 9-37 24l-8 44c-2 11 5 18 16 18h58c11 0 18-7 16-18l-8-44c-5-15-18-24-37-24z" fill="url(#tunicG-${uid})"/>
       <rect x="70" y="182" width="84" height="12" rx="6" fill="${shade(c, -0.5)}"/>
       <rect x="102" y="180" width="20" height="16" rx="5" fill="#e8c27a"/>
       <rect x="58" y="138" width="19" height="62" rx="9" fill="${shade(c, -0.1)}" transform="rotate(10 67 169)"/>
@@ -279,19 +455,20 @@ export function renderAvatar(opts = {}) {
   const eq = opts.equipped || {};
   const stage = Number(opts.dragonStage) || 0;
   const showDragon = opts.showDragon !== false;
+  const uid = nextUid();
 
   const part = (slot) => {
     const id = eq[slot];
     const set = SLOT_SETS[slot];
-    return id && set && set[id] ? set[id](c) : '';
+    return id && set && set[id] ? set[id](c, uid) : '';
   };
 
   return `
 <svg viewBox="0 0 240 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(opts.name || 'הלוחם')}">
-  ${defs(c)}
+  ${defs(c, uid)}
   ${part('aura')}
   ${part('cape')}
-  ${baseBody(c)}
+  ${baseBody(c, uid)}
   ${part('armor')}
   ${part('helmet')}
   ${part('shield')}

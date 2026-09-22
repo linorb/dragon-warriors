@@ -3,6 +3,7 @@
 
 import { ri, pick, shuffle, weightedPick, fmt } from './util.js';
 import { N, O, L, R, solve, tokensToString } from './exprtokens.js';
+import { allRectSolutions } from './geometry.js';
 
 /* ============================ נושאים ============================ */
 
@@ -18,12 +19,16 @@ export const TOPICS = {
   distribute: { id: 'distribute', name: 'כפל בעזרת פילוג', region: 'נפחיית הפילוג', icon: '🔨' },
   divisibility: { id: 'divisibility', name: 'סימני התחלקות', region: 'מרתף האוצרות', icon: '🗝️' },
   insight: { id: 'insight', name: 'תובנה מספרית', region: 'היכל התובנה', icon: '🔮' },
+  fractions: { id: 'fractions', name: 'שברים', region: 'מבצר השברים', icon: '🍕' },
+  geometry: { id: 'geometry', name: 'צורות וגאומטריה', region: 'עמק הגאומטריה', icon: '📐' },
+  chart: { id: 'chart', name: 'קריאת דיאגרמה', region: 'מגדל הדיאגרמות', icon: '📊' },
 };
 
 /** סדר האזורים במפת העולם */
 export const REGION_ORDER = [
   'mult_table', 'numberline', 'add_sub', 'mult_big', 'distribute',
-  'order_ops', 'missing', 'divisibility', 'weight', 'word', 'insight',
+  'order_ops', 'missing', 'divisibility', 'weight', 'fractions',
+  'geometry', 'chart', 'word', 'insight',
 ];
 
 /* ============================ עזרים ============================ */
@@ -846,6 +851,451 @@ function genShirts() {
   });
 }
 
+/* ============================ שברים ============================ */
+
+const SHAPE_KINDS = ['pizza', 'bar', 'pizza', 'bar', 'shield'];
+
+/** צביעת חלקים כדי להראות שבר */
+function genFracColor() {
+  const parts = pick([2, 3, 4, 5, 6, 8]);
+  const target = ri(1, parts - 1);
+  const shapeKind = pick(SHAPE_KINDS);
+  return Q({
+    type: 'frac_color',
+    topic: 'fractions',
+    ui: 'frac_color',
+    instruction: 'צבעו את החלקים כך שיתאימו לשבר:',
+    shapes: 1,
+    parts,
+    target,
+    shapeKind,
+    fraction: { num: target, den: parts },
+    answer: target,
+    answerText: `${target}/${parts}`,
+    hint: `המכנה ${fmt(parts)} אומר לכמה חלקים שווים חילקנו את השלם. המונה ${fmt(target)} אומר כמה חלקים צובעים.`,
+    steps: [
+      `השלם מחולק ל-${fmt(parts)} חלקים שווים - זה המכנה.`,
+      `צריך לצבוע ${fmt(target)} חלקים - זה המונה.`,
+      `ולכן צבענו ${target}/${parts} מהשלם.`,
+    ],
+  });
+}
+
+/** התאמת שבר לציור */
+function genFracName() {
+  const parts = pick([3, 4, 5, 6, 8]);
+  const filled = ri(1, parts - 1);
+  const wrongs = new Set();
+  wrongs.add(`${parts - filled}/${parts}`);
+  wrongs.add(`${filled}/${filled + parts}`);
+  wrongs.add(`${filled + 1}/${parts}`);
+  const options = shuffle([
+    { text: `${filled}/${parts}`, correct: true },
+    ...[...wrongs].filter((w) => w !== `${filled}/${parts}`).slice(0, 3).map((w) => ({ text: w, correct: false })),
+  ]);
+  return Q({
+    type: 'frac_name',
+    topic: 'fractions',
+    ui: 'quiz',
+    instruction: 'איזה שבר מתאים לציור?',
+    figure: { kind: 'fraction', shapes: 1, parts, filled, shapeKind: pick(SHAPE_KINDS) },
+    options,
+    answer: `${filled}/${parts}`,
+    answerText: `${filled}/${parts}`,
+    hint: 'המכנה - לכמה חלקים שווים חולק השלם. המונה - כמה חלקים צבועים.',
+    steps: [
+      `השלם חולק ל-${fmt(parts)} חלקים שווים, ולכן המכנה הוא ${fmt(parts)}.`,
+      `צבועים ${fmt(filled)} חלקים, ולכן המונה הוא ${fmt(filled)}.`,
+      `השבר הוא ${filled}/${parts}.`,
+    ],
+  });
+}
+
+/** שבר גדול משלם, והפיכתו למספר מעורב */
+function genFracImproper() {
+  const den = pick([2, 3, 4, 5]);
+  const whole = ri(1, 3);
+  const rest = ri(1, den - 1);
+  const num = whole * den + rest;
+  const shapes = whole + 1;
+  return Q({
+    type: 'frac_improper',
+    topic: 'fractions',
+    ui: 'frac_color',
+    instruction: 'צבעו את החלקים כדי לראות כמה שלמים יש בשבר:',
+    shapes,
+    parts: den,
+    target: num,
+    shapeKind: pick(['pizza', 'bar']),
+    fraction: { num, den },
+    followUp: { prompt: 'כמה שלמים שלמים קיבלנו?', answer: whole },
+    answer: num,
+    answerText: `${num}/${den} = ${whole} ${rest}/${den}`,
+    hint: `כל שלם מורכב מ-${fmt(den)} חלקים. כמה פעמים ${fmt(den)} נכנס בתוך ${fmt(num)}?`,
+    steps: [
+      `כל שלם הוא ${den}/${den}.`,
+      `${fmt(num)} : ${fmt(den)} = ${fmt(whole)} ונשארו ${fmt(rest)} חלקים.`,
+      `ולכן ${num}/${den} = ${whole} שלמים ועוד ${rest}/${den}.`,
+    ],
+  });
+}
+
+/** מיון שברים לשתי תיבות */
+function genFracSort() {
+  const mode = ri(1, 2);
+  if (mode === 1) {
+    const halves = shuffle([[1, 2], [2, 4], [3, 6], [4, 8], [5, 10], [6, 12]]).slice(0, 3);
+    const others = shuffle([[1, 3], [2, 3], [3, 4], [1, 4], [2, 5], [3, 5], [5, 8], [2, 6]]).slice(0, 3);
+    const cards = shuffle([
+      ...halves.map(([n, d]) => ({ num: n, den: d, bin: 0 })),
+      ...others.map(([n, d]) => ({ num: n, den: d, bin: 1 })),
+    ]);
+    return Q({
+      type: 'frac_sort_half',
+      topic: 'fractions',
+      ui: 'frac_sort',
+      instruction: 'מיינו את השברים לשתי התיבות:',
+      cards,
+      bins: ['שווה לחצי', 'לא שווה לחצי'],
+      answer: 'מיון נכון',
+      answerText: cards.filter((c) => c.bin === 0).map((c) => `${c.num}/${c.den}`).join(', '),
+      hint: 'שבר שווה לחצי כאשר המונה הוא בדיוק חצי מהמכנה, למשל 3/6 או 4/8.',
+      steps: [
+        'שבר שווה לחצי אם המכנה גדול פי 2 מהמונה.',
+        `השברים ששווים לחצי כאן: ${cards.filter((c) => c.bin === 0).map((c) => `${c.num}/${c.den}`).join(', ')}.`,
+        'בכל השאר המונה אינו בדיוק חצי מהמכנה.',
+      ],
+    });
+  }
+
+  // גדול מ-1 וקטן מ-2
+  const between = shuffle([[3, 2], [5, 4], [4, 3], [7, 5], [5, 3], [9, 8]]).slice(0, 3);
+  const outside = shuffle([[1, 2], [3, 4], [2, 3], [7, 3], [9, 4], [5, 2]]).slice(0, 3);
+  const cards = shuffle([
+    ...between.map(([n, d]) => ({ num: n, den: d, bin: 0 })),
+    ...outside.map(([n, d]) => ({ num: n, den: d, bin: 1 })),
+  ]);
+  return Q({
+    type: 'frac_sort_between',
+    topic: 'fractions',
+    ui: 'frac_sort',
+    instruction: 'מיינו את השברים לשתי התיבות:',
+    cards,
+    bins: ['בין 1 ל-2', 'לא בין 1 ל-2'],
+    answer: 'מיון נכון',
+    answerText: cards.filter((c) => c.bin === 0).map((c) => `${c.num}/${c.den}`).join(', '),
+    hint: 'שבר גדול מ-1 כשהמונה גדול מהמכנה, וקטן מ-2 כשהמונה קטן מפי 2 מהמכנה.',
+    steps: [
+      'שבר גדול מ-1 כאשר המונה גדול מהמכנה.',
+      'שבר קטן מ-2 כאשר המונה קטן מפעמיים המכנה.',
+      `השברים המתאימים כאן: ${cards.filter((c) => c.bin === 0).map((c) => `${c.num}/${c.den}`).join(', ')}.`,
+    ],
+  });
+}
+
+/** חיבור שברים בעלי מכנה זהה */
+function genFracAdd() {
+  const den = pick([4, 5, 6, 8, 10, 12]);
+  const a = ri(1, den - 2);
+  const b = ri(1, den - a - 1);
+  const missing = pick(['result', 'right']);
+  const total = a + b;
+  return Q({
+    type: 'frac_add',
+    topic: 'fractions',
+    ui: 'frac_add',
+    instruction: missing === 'result' ? 'חברו את השברים:' : 'השלימו את השבר החסר:',
+    den,
+    left: a,
+    right: b,
+    total,
+    missing,
+    answer: missing === 'result' ? total : b,
+    answerText: missing === 'result' ? `${total}/${den}` : `${b}/${den}`,
+    hint: 'כשהמכנים זהים מחברים רק את המונים, והמכנה נשאר אותו הדבר.',
+    steps: missing === 'result'
+      ? [
+        `המכנה זהה בשני השברים, ולכן הוא נשאר ${fmt(den)}.`,
+        `מחברים את המונים: ${fmt(a)} + ${fmt(b)} = ${fmt(total)}.`,
+        `התוצאה: ${total}/${den}.`,
+      ]
+      : [
+        `המכנה זהה, ולכן עובדים רק עם המונים.`,
+        `${fmt(total)} − ${fmt(a)} = ${fmt(b)}.`,
+        `השבר החסר הוא ${b}/${den}.`,
+      ],
+  });
+}
+
+/* ============================ גאומטריה ============================ */
+
+const TRIANGLE_GOALS = [
+  { angle: 'obtuse', label: 'משולש קהה זווית' },
+  { angle: 'right', label: 'משולש ישר זווית' },
+  { angle: 'acute', label: 'משולש חד זווית' },
+  { sides: 'isosceles', label: 'משולש שווה שוקיים' },
+  { sides: 'scalene', label: 'משולש שונה צלעות' },
+  { angle: 'right', sides: 'isosceles', label: 'משולש ישר זווית ושווה שוקיים' },
+];
+
+function genGeoTriangle() {
+  const g = pick(TRIANGLE_GOALS);
+  const tips = {
+    obtuse: 'בזווית קהה שתי הצלעות "נפתחות" רחב - נסו נקודה רחוקה הצידה.',
+    right: 'זווית ישרה נוצרת כששתי צלעות הולכות בדיוק לאורך קווי הרשת - אחת ימינה ואחת למטה.',
+    acute: 'במשולש חד זווית כל שלוש הזוויות צרות - צורה "מחודדת" ולא שטוחה.',
+  };
+  const sideTips = {
+    isosceles: 'שווה שוקיים - שתי צלעות באותו אורך בדיוק.',
+    scalene: 'שונה צלעות - כל שלוש הצלעות באורכים שונים.',
+  };
+  return Q({
+    type: 'geo_triangle',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: `סרטטו ${g.label}:`,
+    grid: { kind: 'square', cols: 8, rows: 8 },
+    points: 3,
+    goal: { kind: 'triangle', angle: g.angle, sides: g.sides },
+    answer: g.label,
+    answerText: g.label,
+    hint: [g.angle ? tips[g.angle] : '', g.sides ? sideTips[g.sides] : ''].filter(Boolean).join(' '),
+    steps: [
+      `צריך לסרטט ${g.label}.`,
+      g.angle === 'right' ? 'לדוגמה: נקודה אחת, נקודה שנייה ישר ימינה ממנה, ונקודה שלישית ישר מתחת לראשונה.' : '',
+      g.angle === 'obtuse' ? 'לדוגמה: שתי נקודות על אותו קו, והשלישית קרוב מאוד לאחת מהן אך מעט הצידה.' : '',
+      g.sides === 'isosceles' ? 'שתי הצלעות היוצאות מאותה נקודה צריכות להיות באותו אורך.' : '',
+      'המשחק בודק את הזוויות ואת אורכי הצלעות באופן מדויק.',
+    ].filter(Boolean),
+  });
+}
+
+function genGeoEquilateral() {
+  return Q({
+    type: 'geo_equilateral',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: 'סרטטו משולש שווה צלעות:',
+    grid: { kind: 'tri', cols: 8, rows: 7 },
+    points: 3,
+    goal: { kind: 'triangle', sides: 'equilateral' },
+    answer: 'משולש שווה צלעות',
+    answerText: 'משולש שווה צלעות',
+    hint: 'הרשת הזו משולשת: כל שלוש נקודות שכנות יוצרות משולש שווה צלעות.',
+    steps: [
+      'ברשת משולשת המרחק בין כל שתי נקודות שכנות זהה.',
+      'בוחרים שלוש נקודות שכנות שיוצרות משולש - וכל הצלעות יוצאות שוות.',
+      'אפשר גם משולש גדול יותר, כל עוד כל הצלעות באותו אורך.',
+    ],
+  });
+}
+
+function genGeoQuadEqual() {
+  return Q({
+    type: 'geo_quad_equal',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: 'סרטטו מרובע שכל צלעותיו שוות:',
+    grid: { kind: 'square', cols: 8, rows: 8 },
+    points: 4,
+    goal: { kind: 'quad', requires: 'rhombus' },
+    answer: 'ריבוע או מעוין',
+    answerText: 'ריבוע או מעוין',
+    hint: 'ריבוע הוא הפתרון הקל. מעוין (יהלום) גם מתאים - כל הצלעות שוות אך הזוויות אינן ישרות.',
+    steps: [
+      'מרובע שכל צלעותיו שוות נקרא מעוין.',
+      'ריבוע הוא מקרה מיוחד של מעוין, שבו גם כל הזוויות ישרות.',
+      'הכי קל לסרטט ריבוע: אותו מספר צעדים בכל צלע.',
+    ],
+  });
+}
+
+function genGeoParallelogram() {
+  const x = ri(1, 3);
+  const y = ri(4, 6);
+  const dx = ri(2, 4);
+  return Q({
+    type: 'geo_parallelogram',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: 'לפניכם צלע אחת של מקבילית. השלימו את הסרטוט למקבילית:',
+    grid: { kind: 'square', cols: 8, rows: 8 },
+    points: 4,
+    fixed: [{ c: x, r: y }, { c: x + dx, r: y }],
+    goal: { kind: 'quad', requires: 'parallelogram' },
+    answer: 'מקבילית',
+    answerText: 'מקבילית',
+    hint: 'במקבילית הצלע שמול הצלע הנתונה שווה לה באורך ומקבילה לה - אותה תזוזה בדיוק.',
+    steps: [
+      'הצלע הנתונה הולכת כמה צעדים לצד אחד.',
+      'מוסיפים שתי נקודות כך שהצלע שמולה תהיה באותו כיוון ובאותו אורך.',
+      'התוצאה: שתי זוגות של צלעות מקבילות ושוות - מקבילית.',
+    ],
+  });
+}
+
+function genGeoRect(kind) {
+  const isArea = kind === 'area';
+  const value = isArea ? pick([18, 12, 24, 16]) : pick([18, 14, 20, 16]);
+  const goal = { kind: isArea ? 'rect_area' : 'rect_perimeter', value };
+  return Q({
+    type: isArea ? 'geo_rect_area' : 'geo_rect_perimeter',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: isArea
+      ? `סרטטו מלבן ששטחו ${fmt(value)} סמ"ר:`
+      : `סרטטו מלבן שהיקפו ${fmt(value)} ס"מ:`,
+    grid: { kind: 'square', cols: 10, rows: 8 },
+    points: 4,
+    goal,
+    collect: true,
+    answer: isArea ? `מלבן ששטחו ${value}` : `מלבן שהיקפו ${value}`,
+    answerText: allRectSolutions(goal).join(' , '),
+    hint: isArea
+      ? `שטח = אורך × רוחב. אילו שני מספרים מוכפלים ונותנים ${fmt(value)}?`
+      : `היקף = סכום כל ארבע הצלעות. אורך ורוחב ביחד צריכים להיות ${fmt(value / 2)}.`,
+    steps: isArea
+      ? [
+        `שטח המלבן הוא אורך × רוחב.`,
+        `צריך שני מספרים שמכפלתם ${fmt(value)}.`,
+        `כל האפשרויות: ${allRectSolutions(goal).join(' , ')}.`,
+      ]
+      : [
+        `היקף = 2 × (אורך + רוחב).`,
+        `${fmt(value)} : 2 = ${fmt(value / 2)}, ולכן אורך + רוחב = ${fmt(value / 2)}.`,
+        `כל האפשרויות: ${allRectSolutions(goal).join(' , ')}.`,
+      ],
+  });
+}
+
+function genGeoParallelSide() {
+  const w = ri(3, 6);
+  const h = ri(2, 4);
+  const x = ri(1, 3);
+  const y = ri(1, 3);
+  const corners = [
+    { c: x, r: y }, { c: x + w, r: y }, { c: x + w, r: y + h }, { c: x, r: y + h },
+  ];
+  const highlighted = ri(0, 3);
+  return Q({
+    type: 'geo_parallel_side',
+    topic: 'geometry',
+    ui: 'geo',
+    instruction: 'לפניכם מלבן שבו מודגשת צלע אחת. בחרו את הצלע המקבילה לה:',
+    grid: { kind: 'square', cols: 9, rows: 8 },
+    mode: 'pick_side',
+    corners,
+    highlighted,
+    goal: { kind: 'pick_side' },
+    answerIndex: (highlighted + 2) % 4,
+    answer: 'הצלע שמול הצלע המודגשת',
+    answerText: 'הצלע שנמצאת בדיוק מול הצלע המודגשת',
+    hint: 'צלעות מקבילות הן צלעות שלעולם לא ייפגשו. במלבן זו תמיד הצלע שנמצאת מול הצלע המודגשת.',
+    steps: [
+      'במלבן יש שני זוגות של צלעות מקבילות.',
+      'הצלע המקבילה לצלע המודגשת היא זו שנמצאת ממול, בכיוון זהה.',
+      'הצלעות שנוגעות בצלע המודגשת ניצבות לה, ולא מקבילות.',
+    ],
+  });
+}
+
+function genGeoProps() {
+  const sets = [
+    {
+      prompt: 'מה נכון תמיד לגבי ריבוע?',
+      options: [
+        { text: 'כל הצלעות שוות וכל ארבע הזוויות ישרות.', correct: true },
+        { text: 'כל הצלעות שוות, אבל הזוויות אינן ישרות.', correct: false },
+        { text: 'רק שתי צלעות נגדיות שוות.', correct: false },
+      ],
+      steps: ['בריבוע ארבע צלעות שוות.', 'בנוסף, כל ארבע הזוויות הן זוויות ישרות (90 מעלות).', 'לכן ריבוע הוא גם מלבן וגם מעוין.'],
+      hint: 'חשבו גם על הצלעות וגם על הזוויות.',
+    },
+    {
+      prompt: 'מה ההבדל בין מעוין לריבוע?',
+      options: [
+        { text: 'בשניהם כל הצלעות שוות, אבל במעוין הזוויות אינן חייבות להיות ישרות.', correct: true },
+        { text: 'במעוין הצלעות אינן שוות, ובריבוע כן.', correct: false },
+        { text: 'אין שום הבדל, אלה שתי מילים לאותה צורה.', correct: false },
+      ],
+      steps: ['במעוין כל ארבע הצלעות שוות באורכן.', 'הזוויות במעוין אינן חייבות להיות ישרות.', 'ריבוע הוא מעוין מיוחד שבו כל הזוויות ישרות.'],
+      hint: 'בשתי הצורות כל הצלעות שוות. מה עם הזוויות?',
+    },
+    {
+      prompt: 'כמה זוגות של צלעות מקבילות יש במקבילית?',
+      options: [
+        { text: 'שני זוגות - כל שתי צלעות נגדיות מקבילות.', correct: true },
+        { text: 'זוג אחד בלבד.', correct: false },
+        { text: 'אף זוג - הצלעות נפגשות.', correct: false },
+      ],
+      steps: ['במקבילית הצלעות הנגדיות מקבילות זו לזו.', 'יש שני זוגות כאלה.', 'הצלעות הנגדיות גם שוות באורכן.'],
+      hint: 'השם "מקבילית" מרמז על התשובה.',
+    },
+  ];
+  const s = pick(sets);
+  return Q({
+    type: 'geo_props',
+    topic: 'geometry',
+    ui: 'quiz',
+    instruction: s.prompt,
+    options: shuffle(s.options),
+    answer: s.options.find((o) => o.correct).text,
+    answerText: s.options.find((o) => o.correct).text,
+    hint: s.hint,
+    steps: s.steps,
+  });
+}
+
+/* ============================ קריאת דיאגרמה ============================ */
+
+function genChart() {
+  const labels = shuffle(['לוחם', 'דרקון', 'קשת', 'קוסם', 'אביר']).slice(0, 4);
+  const values = labels.map(() => ri(2, 12) * 5);
+  const mode = ri(1, 4);
+  const maxI = values.indexOf(Math.max(...values));
+  const minI = values.indexOf(Math.min(...values));
+  const unit = pick(['נקודות כוח', 'מטבעות', 'ניצחונות']);
+
+  let prompt, answer, steps;
+  if (mode === 1) {
+    prompt = `כמה ${unit} יש ל${labels[maxI]}?`;
+    answer = values[maxI];
+    steps = [`מחפשים את העמודה של ${labels[maxI]}.`, `הגובה שלה מראה ${fmt(answer)}.`];
+  } else if (mode === 2) {
+    prompt = `בכמה ${unit} יש ל${labels[maxI]} יותר מאשר ל${labels[minI]}?`;
+    answer = values[maxI] - values[minI];
+    steps = [
+      `ל${labels[maxI]} יש ${fmt(values[maxI])}.`,
+      `ל${labels[minI]} יש ${fmt(values[minI])}.`,
+      `${fmt(values[maxI])} − ${fmt(values[minI])} = ${fmt(answer)}.`,
+    ];
+  } else if (mode === 3) {
+    prompt = `כמה ${unit} יש לכולם ביחד?`;
+    answer = values.reduce((s, v) => s + v, 0);
+    steps = [`מחברים את כל העמודות:`, `${values.map((v) => fmt(v)).join(' + ')} = ${fmt(answer)}.`];
+  } else {
+    const i = ri(0, labels.length - 1);
+    const j = (i + 1) % labels.length;
+    prompt = `מה ההפרש בין ${labels[i]} ל${labels[j]}?`;
+    answer = Math.abs(values[i] - values[j]);
+    steps = [
+      `ל${labels[i]} יש ${fmt(values[i])}, ול${labels[j]} יש ${fmt(values[j])}.`,
+      `ההפרש: ${fmt(Math.max(values[i], values[j]))} − ${fmt(Math.min(values[i], values[j]))} = ${fmt(answer)}.`,
+    ];
+  }
+
+  return Q({
+    type: 'chart_read',
+    topic: 'chart',
+    ui: 'chart',
+    instruction: prompt,
+    chart: { labels, values, unit },
+    answer,
+    hint: 'כל עמודה מראה מספר. קראו את הגובה של העמודות שהשאלה מדברת עליהן.',
+    steps,
+  });
+}
+
 /* ============================ רישום הגנרטורים ============================ */
 
 export const GENERATORS = [
@@ -870,6 +1320,23 @@ export const GENERATORS = [
   { type: 'word_multi_buy', topic: 'word', weight: 0.4, gen: genWordMultiBuy },
   { type: 'word_buy_remain', topic: 'word', weight: 0.4, gen: genWordBuyRemain },
   { type: 'word_shirts', topic: 'word', weight: 0.5, gen: genShirts },
+
+  { type: 'frac_color', topic: 'fractions', weight: 1, gen: genFracColor },
+  { type: 'frac_name', topic: 'fractions', weight: 1, gen: genFracName },
+  { type: 'frac_improper', topic: 'fractions', weight: 1, gen: genFracImproper },
+  { type: 'frac_sort', topic: 'fractions', weight: 0.9, gen: genFracSort },
+  { type: 'frac_add', topic: 'fractions', weight: 1.1, gen: genFracAdd },
+
+  { type: 'geo_triangle', topic: 'geometry', weight: 1.1, gen: genGeoTriangle },
+  { type: 'geo_equilateral', topic: 'geometry', weight: 0.5, gen: genGeoEquilateral },
+  { type: 'geo_quad_equal', topic: 'geometry', weight: 0.7, gen: genGeoQuadEqual },
+  { type: 'geo_parallelogram', topic: 'geometry', weight: 0.8, gen: genGeoParallelogram },
+  { type: 'geo_rect_area', topic: 'geometry', weight: 0.9, gen: () => genGeoRect('area') },
+  { type: 'geo_rect_perimeter', topic: 'geometry', weight: 0.9, gen: () => genGeoRect('perimeter') },
+  { type: 'geo_parallel_side', topic: 'geometry', weight: 0.8, gen: genGeoParallelSide },
+  { type: 'geo_props', topic: 'geometry', weight: 0.7, gen: genGeoProps },
+
+  { type: 'chart_read', topic: 'chart', weight: 1, gen: genChart },
 ];
 
 export function generateByType(type) {
@@ -1136,6 +1603,143 @@ export const TEACHER_QUESTIONS = [
     ],
     hint: 'השוו בין 540 ל-270: פי כמה גדלה המכפלה?',
     steps: ['540 : 270 = 2, כלומר המכפלה גדלה פי 2.', 'הגורמים 15 ו-18 לא השתנו.', 'לכן הגורם החסר הוא 2.'],
+  }),
+
+  // --- שברים ---
+  () => T({
+    type: 'teacher_frac_1', topic: 'fractions', ui: 'quiz',
+    instruction: 'כתבו את השבר המתאים לציור:',
+    figure: { kind: 'fraction', shapes: 1, parts: 4, filled: 3, shapeKind: 'pizza' },
+    options: shuffle([
+      { text: '3/4', correct: true }, { text: '4/3', correct: false }, { text: '1/4', correct: false }, { text: '3/7', correct: false },
+    ]),
+    answer: '3/4', answerText: '3/4',
+    hint: 'המכנה - לכמה חלקים חולק השלם. המונה - כמה חלקים צבועים.',
+    steps: ['העיגול חולק ל-4 חלקים שווים, ולכן המכנה הוא 4.', 'צבועים 3 חלקים, ולכן המונה הוא 3.', 'השבר הוא 3/4.'],
+  }),
+  () => T({
+    type: 'teacher_frac_2', topic: 'fractions', ui: 'frac_sort',
+    instruction: 'הקיפו את השברים הגדולים מ-1 וקטנים מ-2 - מיינו אותם לתיבה הנכונה:',
+    cards: shuffle([
+      { num: 3, den: 2, bin: 0 }, { num: 5, den: 4, bin: 0 }, { num: 4, den: 3, bin: 0 },
+      { num: 1, den: 2, bin: 1 }, { num: 5, den: 2, bin: 1 }, { num: 3, den: 4, bin: 1 },
+    ]),
+    bins: ['בין 1 ל-2', 'לא בין 1 ל-2'],
+    answer: 'מיון נכון', answerText: '3/2 , 5/4 , 4/3',
+    hint: 'שבר גדול מ-1 כשהמונה גדול מהמכנה. שבר קטן מ-2 כשהמונה קטן מפי 2 מהמכנה.',
+    steps: [
+      '3/2 = שלם וחצי, 5/4 = שלם ורבע, 4/3 = שלם ושליש - כולם בין 1 ל-2.',
+      '1/2 ו-3/4 קטנים מ-1.',
+      '5/2 = שניים וחצי, כלומר גדול מ-2.',
+    ],
+  }),
+  () => T({
+    type: 'teacher_frac_3', topic: 'fractions', ui: 'frac_sort',
+    instruction: 'מצאו שברים השווים לחצי - מיינו אותם לתיבה הנכונה:',
+    cards: shuffle([
+      { num: 2, den: 4, bin: 0 }, { num: 3, den: 6, bin: 0 }, { num: 5, den: 10, bin: 0 },
+      { num: 2, den: 3, bin: 1 }, { num: 3, den: 4, bin: 1 }, { num: 2, den: 5, bin: 1 },
+    ]),
+    bins: ['שווה לחצי', 'לא שווה לחצי'],
+    answer: 'מיון נכון', answerText: '2/4 , 3/6 , 5/10',
+    hint: 'שבר שווה לחצי כאשר המכנה גדול פי 2 מהמונה.',
+    steps: ['2/4: 4 זה פי 2 מ-2, ולכן זה חצי.', '3/6 ו-5/10 - גם כאן המכנה גדול פי 2 מהמונה.', 'בשאר השברים היחס שונה, ולכן הם אינם חצי.'],
+  }),
+  () => T({
+    type: 'teacher_frac_4', topic: 'fractions', ui: 'frac_add',
+    instruction: 'השלימו את השבר החסר:',
+    den: 8, left: 3, right: 4, total: 7, missing: 'right',
+    answer: 4, answerText: '4/8',
+    hint: 'המכנה זהה, ולכן עובדים רק עם המונים: כמה חסר ל-3 כדי להגיע ל-7?',
+    steps: ['המכנה נשאר 8.', '7 − 3 = 4.', 'השבר החסר הוא 4/8.'],
+  }),
+
+  // --- גאומטריה ---
+  () => T({
+    type: 'teacher_geo_1', topic: 'geometry', ui: 'geo',
+    instruction: 'לפניכם מלבן שבו מודגשת צלע אחת. בחרו צלע מקבילה לצלע המודגשת:',
+    grid: { kind: 'square', cols: 9, rows: 8 },
+    mode: 'pick_side',
+    corners: [{ c: 1, r: 2 }, { c: 6, r: 2 }, { c: 6, r: 5 }, { c: 1, r: 5 }],
+    highlighted: 0, answerIndex: 2,
+    goal: { kind: 'pick_side' },
+    answer: 'הצלע שמול הצלע המודגשת', answerText: 'הצלע התחתונה, שמול הצלע המודגשת',
+    hint: 'צלעות מקבילות לעולם לא נפגשות. במלבן זו הצלע שנמצאת בדיוק ממול.',
+    steps: ['הצלע המודגשת היא הצלע העליונה.', 'הצלע המקבילה לה היא הצלע התחתונה.', 'שתי הצלעות האחרות ניצבות לה ולא מקבילות.'],
+  }),
+  () => T({
+    type: 'teacher_geo_2', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו מרובע שכל צלעותיו שוות:',
+    grid: { kind: 'square', cols: 8, rows: 8 }, points: 4,
+    goal: { kind: 'quad', requires: 'rhombus' },
+    answer: 'ריבוע או מעוין', answerText: 'ריבוע או מעוין',
+    hint: 'ריבוע הוא הפתרון הפשוט ביותר: אותו מספר צעדים בכל צלע.',
+    steps: ['מרובע שכל צלעותיו שוות נקרא מעוין.', 'ריבוע הוא מעוין שבו גם הזוויות ישרות.', 'שני הפתרונות מתקבלים.'],
+  }),
+  () => T({
+    type: 'teacher_geo_3', topic: 'geometry', ui: 'geo',
+    instruction: 'לפניכם סרטוט של צלע אחת במקבילית. השלימו את הסרטוט למקבילית:',
+    grid: { kind: 'square', cols: 8, rows: 8 }, points: 4,
+    fixed: [{ c: 2, r: 5 }, { c: 5, r: 5 }],
+    goal: { kind: 'quad', requires: 'parallelogram' },
+    answer: 'מקבילית', answerText: 'מקבילית',
+    hint: 'הצלע שמול הצלע הנתונה חייבת להיות באותו אורך ובאותו כיוון.',
+    steps: ['הצלע הנתונה היא 3 צעדים ימינה.', 'מוסיפים שתי נקודות כך שגם הצלע שממול תהיה 3 צעדים באותו כיוון.', 'התוצאה היא מקבילית.'],
+  }),
+  () => T({
+    type: 'teacher_geo_4', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו משולש קהה זווית:',
+    grid: { kind: 'square', cols: 8, rows: 8 }, points: 3,
+    goal: { kind: 'triangle', angle: 'obtuse' },
+    answer: 'משולש קהה זווית', answerText: 'משולש קהה זווית',
+    hint: 'זווית קהה גדולה מזווית ישרה - המשולש נראה "שטוח ורחב".',
+    steps: ['בוחרים שתי נקודות רחוקות זו מזו על אותו קו.', 'הנקודה השלישית קרובה לאחת מהן ורק מעט מעליה.', 'הזווית ליד אותה נקודה תצא קהה.'],
+  }),
+  () => T({
+    type: 'teacher_geo_5', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו משולש שווה צלעות:',
+    grid: { kind: 'tri', cols: 8, rows: 7 }, points: 3,
+    goal: { kind: 'triangle', sides: 'equilateral' },
+    answer: 'משולש שווה צלעות', answerText: 'משולש שווה צלעות',
+    hint: 'ברשת המשולשת הזו כל שלוש נקודות שכנות יוצרות משולש שווה צלעות.',
+    steps: ['ברשת משולשת כל הנקודות השכנות במרחק זהה.', 'בוחרים שלוש נקודות שכנות.', 'כל שלוש הצלעות יוצאות באותו אורך.'],
+  }),
+  () => T({
+    type: 'teacher_geo_6', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו משולש ישר זווית ושווה שוקיים:',
+    grid: { kind: 'square', cols: 8, rows: 8 }, points: 3,
+    goal: { kind: 'triangle', angle: 'right', sides: 'isosceles' },
+    answer: 'משולש ישר זווית ושווה שוקיים', answerText: 'משולש ישר זווית ושווה שוקיים',
+    hint: 'שתי צלעות באותו אורך שיוצאות מאותה נקודה - אחת ימינה ואחת למטה.',
+    steps: ['נקודה אחת היא "הפינה" של הזווית הישרה.', 'מהפינה יוצאים 3 צעדים ימינה, ו-3 צעדים למטה.', 'מחברים את שתי הנקודות ומקבלים משולש ישר זווית ושווה שוקיים.'],
+  }),
+  () => T({
+    type: 'teacher_geo_7', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו מלבנים שונים ששטחם 18 סמ"ר:',
+    grid: { kind: 'square', cols: 10, rows: 8 }, points: 4,
+    goal: { kind: 'rect_area', value: 18 }, collect: true,
+    answer: 'מלבן ששטחו 18', answerText: '1 × 18 , 2 × 9 , 3 × 6',
+    hint: 'שטח = אורך × רוחב. אילו שני מספרים מוכפלים ונותנים 18?',
+    steps: ['18 = 1 × 18.', '18 = 2 × 9.', '18 = 3 × 6.', 'כל אחד מהמלבנים האלה נכון - נסו למצוא כמה שיותר!'],
+  }),
+  () => T({
+    type: 'teacher_geo_8', topic: 'geometry', ui: 'geo',
+    instruction: 'סרטטו מלבנים שונים שהיקפם 18 ס"מ:',
+    grid: { kind: 'square', cols: 10, rows: 8 }, points: 4,
+    goal: { kind: 'rect_perimeter', value: 18 }, collect: true,
+    answer: 'מלבן שהיקפו 18', answerText: '1 × 8 , 2 × 7 , 3 × 6 , 4 × 5',
+    hint: 'היקף = 2 × (אורך + רוחב). כלומר אורך + רוחב = 9.',
+    steps: ['18 : 2 = 9, ולכן אורך + רוחב = 9.', 'האפשרויות: 1 ו-8, 2 ו-7, 3 ו-6, 4 ו-5.', 'נסו למצוא כמה שיותר מלבנים שונים!'],
+  }),
+
+  // --- קריאת דיאגרמה ---
+  () => T({
+    type: 'teacher_chart', topic: 'chart', ui: 'chart',
+    instruction: 'לפניכם דיאגרמה של ניצחונות הלוחמים. בכמה ניצחונות יש ללוחם יותר מאשר לקוסם?',
+    chart: { labels: ['לוחם', 'דרקון', 'קוסם', 'קשת'], values: [45, 30, 20, 35], unit: 'ניצחונות' },
+    answer: 25,
+    hint: 'קראו את הגובה של שתי העמודות, ואז חסרו.',
+    steps: ['ללוחם יש 45 ניצחונות.', 'לקוסם יש 20 ניצחונות.', '45 − 20 = 25.'],
   }),
 
   // --- שאלת החולצות ---

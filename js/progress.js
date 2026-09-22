@@ -151,6 +151,33 @@ export function lightningBest() {
   return getState().records.lightningBest || 0;
 }
 
+/* ============================ אוסף הצורות ============================ */
+
+export function shapeList(type) {
+  const coll = getState().records.shapeCollection || {};
+  return Array.isArray(coll[type]) ? coll[type] : [];
+}
+
+export function hasShape(type, label) {
+  return shapeList(type).includes(label);
+}
+
+/** הוספת צורה לאוסף. מחזיר true אם זו צורה חדשה */
+export function addShape(type, label) {
+  let isNew = false;
+  update((s) => {
+    if (!s.records.shapeCollection) s.records.shapeCollection = {};
+    const list = s.records.shapeCollection[type] || [];
+    if (!list.includes(label)) {
+      list.push(label);
+      list.sort();
+      isNew = true;
+    }
+    s.records.shapeCollection[type] = list;
+  });
+  return isNew;
+}
+
 /** דיוק לפי נושא, באחוזים */
 export function accuracyByTopic() {
   const s = getState();

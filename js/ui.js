@@ -4,8 +4,9 @@ import { getState, isStorageAvailable } from './storage.js';
 import { mountAvatar, COLOR_CHOICES, itemArt } from './avatar.js';
 import { CATALOG, SLOTS, TIERS, canBuy, buy, equip, equipped, owns, ownedInSlot } from './shop.js';
 import { rankFor, nextRankFor, RANKS, rankIndexFor, dragonStageFor } from './progress.js';
-import { fmt, esc } from './util.js';
+import { fmt, esc, hebDate } from './util.js';
 import { DRAGON_STAGES } from './avatar.js';
+import { TOPICS, REGION_ORDER } from './questions.js';
 
 export const $ = (sel) => document.querySelector(sel);
 export const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -20,7 +21,7 @@ const SCREEN_TITLES = {
   summary: 'סיכום הקרב',
   shop: 'חנות',
   armory: 'חדר הנשק',
-  settings: 'הגדרות וגיבוי',
+  settings: 'מסך הורים',
   lightning: 'מתקפת ברק',
 };
 
@@ -54,12 +55,31 @@ export function backTarget() {
 
 /* ============================ HUD ============================ */
 
+let lastCoins = null;
+let lastXp = null;
+
+/** הבהוב קצר כשהמספר בסרגל העליון משתנה */
+function pulse(el) {
+  if (!el) return;
+  el.classList.remove('chip-pop');
+  void el.offsetWidth;
+  el.classList.add('chip-pop');
+}
+
 export function updateHUD() {
   const s = getState();
   const c = $('#hud-coins');
   const x = $('#hud-xp');
-  if (c) c.textContent = fmt(s.player.coins);
-  if (x) x.textContent = fmt(s.player.xp);
+  if (c) {
+    if (lastCoins !== null && s.player.coins !== lastCoins) pulse(c.parentElement);
+    c.textContent = fmt(s.player.coins);
+    lastCoins = s.player.coins;
+  }
+  if (x) {
+    if (lastXp !== null && s.player.xp !== lastXp) pulse(x.parentElement);
+    x.textContent = fmt(s.player.xp);
+    lastXp = s.player.xp;
+  }
 }
 
 /* ============================ הודעות וחלוניות ============================ */
@@ -328,4 +348,76 @@ export function renderColorPicker(selected, onPick) {
 export function refreshStorageWarning() {
   const w = $('#storage-warning');
   if (w) w.hidden = isStorageAvailable();
+}
+
+/* ============================ מסך הורים ============================ */
+
+export function renderParentStats() {
+  const s = getState();
+  const t = s.stats;
+  const overall = t.totals.answered
+    ? Math.round((t.totals.firstTry / t.totals.answered) * 100)
+    : null;
+
+  const rows = REGION_ORDER
+    .map((id) => ({ id, name: TOPICS[id].name, ...(t.byTopic[id] || { answered: 0, firstTry: 0 }) }))
+    .filter((r) => r.answered > 0)
+    .map((r) => ({ ...r, acc: Math.round((r.firstTry / r.answered) * 100) }));
+
+  const practiced = rows.slice().sort((a, b) => b.answered - a.answered);
+  const weakest = rows.filter((r) => r.answered >= 3).sort((a, b) => a.acc - b.acc).slice(0, 3);
+  const untouched = REGION_ORDER.filter((id) => !(t.byTopic[id] && t.byTopic[id].answered));
+
+  const bar = (acc) => {
+    const cls = acc >= 80 ? 'good' : acc >= 60 ? 'mid' : 'low';
+    return `<div class="acc-bar"><div class="acc-fill ${cls}" style="width:${acc}%"></div></div>`;
+  };
+
+  $('#parent-stats').innerHTML = `
+    <div class="card">
+      <h2 class="title-mid">מסך הורים</h2>
+      <p class="subtitle">סיכום ההתקדמות של ${esc(s.player.name || 'הלוחם')}</p>
+
+      <div class="parent-grid">
+        <div class="parent-tile"><div class="tile-num num">${fmt(t.sessions)}</div><div>קרבות</div></div>
+        <div class="parent-tile"><div class="tile-num num">${fmt(t.totals.answered)}</div><div>שאלות</div></div>
+        <div class="parent-tile"><div class="tile-num num">${overall === null ? '—' : `${overall}%`}</div><div>דיוק כללי</div></div>
+        <div class="parent-tile"><div class="tile-num num">${fmt(t.streakDays)}</div><div>רצף ימים</div></div>
+      </div>
+
+      <ul class="summary-list">
+        <li><span>שיחק לאחרונה</span><span>${esc(hebDate(t.lastPlayed))}</span></li>
+        <li><span>רצף הימים הארוך ביותר</span><span class="num">${fmt(t.bestStreakDays)}</span></li>
+        <li><span>קרבות מושלמים (5 מתוך 5)</span><span class="num">${fmt(t.perfectBattles)}</span></li>
+        <li><span>שיא במתקפת ברק</span><span class="num">${fmt(s.records.lightningBest || 0)}</span></li>
+        <li><span>שאלות שממתינות לחזרה</span><span class="num">${fmt(s.reviewQueue.length)}</span></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="parent-h3">דיוק לפי נושא <span class="small-note">(תשובה נכונה בניסיון ראשון)</span></h3>
+      ${rows.length ? practiced.map((r) => `
+        <div class="acc-row">
+          <div class="acc-name">${esc(r.name)}</div>
+          ${bar(r.acc)}
+          <div class="acc-val num">${r.acc}%</div>
+          <div class="acc-count small-note"><span class="num">${fmt(r.answered)}</span> שאלות</div>
+        </div>`).join('') : '<p class="small-note">עדיין אין נתונים. אחרי הקרב הראשון יופיע כאן פירוט.</p>'}
+    </div>
+
+    ${weakest.length ? `
+    <div class="card">
+      <h3 class="parent-h3">כדאי לתרגל במיוחד</h3>
+      <ol class="weak-list">
+        ${weakest.map((r) => `<li><strong>${esc(r.name)}</strong> - דיוק <span class="num">${r.acc}%</span>
+          מתוך <span class="num">${fmt(r.answered)}</span> שאלות</li>`).join('')}
+      </ol>
+      <p class="small-note">אפשר לבחור את האזור המתאים במפת העולם ולתרגל אותו ישירות.</p>
+    </div>` : ''}
+
+    ${untouched.length ? `
+    <div class="card">
+      <h3 class="parent-h3">נושאים שעדיין לא תורגלו</h3>
+      <p>${untouched.map((id) => esc(TOPICS[id].name)).join(' · ')}</p>
+    </div>` : ''}`;
 }

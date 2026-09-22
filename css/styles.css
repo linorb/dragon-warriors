@@ -324,6 +324,22 @@ body {
   100% { transform: none; }
 }
 
+.monster-art.defeated { animation: defeat 1s ease forwards; }
+
+@keyframes defeat {
+  0% { opacity: 1; transform: none; }
+  30% { transform: translateY(-10px) rotate(6deg); }
+  100% { opacity: 0; transform: translateY(40px) rotate(20deg) scale(.7); }
+}
+
+.chip-pop { animation: chip-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+
+@keyframes chip-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
 .shake-anim { animation: shake .45s ease; }
 @keyframes shake {
   0%, 100% { transform: none; }
@@ -1002,6 +1018,187 @@ body {
 .bolt-btn:active { transform: scale(.95); background: #4a337f; }
 .flash-good { box-shadow: 0 0 0 4px rgba(77, 219, 139, .7); }
 .flash-bad { box-shadow: 0 0 0 4px rgba(255, 107, 107, .7); }
+
+/* ===== שברים ===== */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.05;
+  font-weight: 900;
+  margin: 0 4px;
+  direction: ltr;
+}
+
+.frac-num { border-bottom: 3px solid currentColor; padding: 0 6px; }
+.frac-den { padding: 0 6px; }
+.frac-num.blank { color: var(--gold); }
+.frac-goal { font-size: 22px; margin: 10px 0; }
+.frac-shapes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 12px 0; }
+.frac-shape-wrap { width: 120px; max-width: 34vw; }
+.frac-shape { width: 100%; height: auto; display: block; }
+.frac-part { cursor: pointer; transition: fill .15s ease; }
+.frac-part:hover { opacity: .85; }
+.frac-count { color: var(--ink-dim); font-size: 16px; }
+.followup { font-size: 20px; font-weight: 700; margin-top: 12px; }
+
+.sort-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  min-height: 70px;
+  padding: 8px;
+  border: 2px dashed rgba(255, 255, 255, .2);
+  border-radius: var(--radius-sm);
+  margin: 10px 0;
+  align-items: center;
+}
+
+.sort-bins { display: flex; gap: 10px; }
+.sort-bin {
+  flex: 1;
+  background: rgba(0, 0, 0, .25);
+  border: 2px solid rgba(255, 255, 255, .15);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.bin-label { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+.bin-items { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 50px; }
+.sort-bin .chest { width: 54px; }
+
+.frac-card {
+  font-family: var(--font);
+  color: var(--ink);
+  background: linear-gradient(180deg, #3d2a74, #2c1d57);
+  border: 2px solid rgba(255, 255, 255, .18);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 20px;
+  cursor: pointer;
+  min-width: 56px;
+  min-height: 62px;
+}
+
+.frac-card:active { transform: scale(.94); }
+.frac-card.in-bin { border-color: var(--gold); background: rgba(255, 204, 77, .18); }
+.frac-card:disabled { opacity: .8; }
+
+.frac-eq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(26px, 7vw, 38px);
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.frac-op { margin: 0 8px; }
+.frac-bars { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+/* מודל הפס נקרא משמאל לימין, כמו התרגיל שמעליו */
+.frac-bar { direction: ltr; display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 2px solid rgba(255, 255, 255, .2); }
+.fb-cell { border-inline-end: 1px solid rgba(0, 0, 0, .4); background: rgba(255, 255, 255, .08); }
+.fb-cell.fill-a { background: var(--blue); }
+.fb-cell.fill-b { background: var(--purple); }
+
+/* ===== דיאגרמה ===== */
+.chart-unit { color: var(--ink-dim); font-size: 15px; margin-bottom: 4px; }
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  height: 200px;
+  padding: 10px 6px 0;
+  border-bottom: 3px solid rgba(255, 255, 255, .25);
+  margin-bottom: 8px;
+}
+
+.bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; max-width: 80px; }
+.bar-val { font-weight: 900; margin-bottom: 4px; }
+.bar {
+  width: 100%;
+  background: linear-gradient(180deg, #8fd8ff, #3f8ddb);
+  border-radius: 8px 8px 0 0;
+  min-height: 6px;
+  transition: height .5s ease;
+}
+.bar-col:nth-child(2) .bar { background: linear-gradient(180deg, #c79bff, #7b45d6); }
+.bar-col:nth-child(3) .bar { background: linear-gradient(180deg, #ffd977, var(--gold-deep)); }
+.bar-col:nth-child(4) .bar { background: linear-gradient(180deg, #8ff0b8, var(--green-deep)); }
+.bar-label { font-size: 14px; margin-top: 6px; text-align: center; }
+
+/* ===== רשת נקודות ===== */
+.geo-wrap { display: flex; justify-content: center; margin: 10px 0; }
+.geo-grid { width: 100%; max-width: 420px; height: auto; touch-action: manipulation; }
+.dot-hit, .side-hit { cursor: pointer; }
+.geo-counters { display: flex; gap: 8px; justify-content: center; margin-bottom: 6px; }
+.geo-tools { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
+.geo-btn { font-size: 15px; min-height: 46px; padding: 8px 14px; }
+.collection { margin-top: 10px; font-size: 15px; color: var(--ink-dim); }
+
+.coll-chip {
+  display: inline-block;
+  background: rgba(255, 204, 77, .18);
+  border: 1px solid rgba(255, 204, 77, .5);
+  color: var(--gold);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin: 2px;
+  font-weight: 700;
+  direction: ltr;
+}
+
+/* ===== מסך הורים ===== */
+.hold-btn { position: relative; overflow: hidden; }
+.hold-label { position: relative; z-index: 1; font-size: 16px; }
+
+.hold-fill {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: rgba(255, 204, 77, .35);
+  transition: width .05s linear;
+}
+
+.parent-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+
+.parent-tile {
+  background: rgba(0, 0, 0, .25);
+  border-radius: var(--radius-sm);
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.tile-num { font-size: 26px; font-weight: 900; color: var(--ink); }
+.parent-h3 { margin: 0 0 10px; font-size: 19px; }
+
+.acc-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.acc-name { font-weight: 700; }
+.acc-bar { height: 14px; background: rgba(0, 0, 0, .35); border-radius: 999px; overflow: hidden; }
+.acc-fill { height: 100%; border-radius: 999px; }
+.acc-fill.good { background: var(--green); }
+.acc-fill.mid { background: var(--gold); }
+.acc-fill.low { background: var(--red); }
+.acc-val { font-weight: 900; }
+.acc-count { grid-column: 1 / -1; margin-top: -6px; }
+.weak-list { padding-inline-start: 22px; line-height: 1.9; margin: 0 0 8px; }
 
 /* ===== מסך רחב ===== */
 @media (min-width: 720px) {

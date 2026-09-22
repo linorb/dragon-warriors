@@ -58,7 +58,10 @@ export function defaultSave() {
       byTopic: {},          // topicId -> { correct, firstTry, wrong, answered }
     },
     reviewQueue: [],        // [{ type, topic, addedAt }]
-    records: { lightningBest: 0 },
+    records: {
+      lightningBest: 0,
+      shapeCollection: {},   // סוג שאלה -> רשימת הצורות שנמצאו, למשל { geo_rect_area: ['3 × 6'] }
+    },
     settings: { readAloud: true },
   };
 }

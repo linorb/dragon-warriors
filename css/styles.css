@@ -1,0 +1,674 @@
+/* ===== לוחמי דרקונים - עיצוב ראשי ===== */
+
+:root {
+  --bg: #150e2b;
+  --bg-2: #1f1440;
+  --panel: #2a1c55;
+  --panel-2: #342368;
+  --ink: #f6f2ff;
+  --ink-dim: #c3b6e6;
+  --gold: #ffcc4d;
+  --gold-deep: #e0a213;
+  --green: #4ddb8b;
+  --green-deep: #24a865;
+  --red: #ff6b6b;
+  --red-deep: #d23c3c;
+  --blue: #59a9ff;
+  --purple: #b57bff;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --font: 'Rubik', 'Assistant', 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+/* התכונה hidden חייבת לגבור על כל כלל display אחר */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #3a2170 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-size: 18px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 14px 40px;
+}
+
+/* ===== ביטויים מתמטיים: תמיד משמאל לימין ===== */
+.expr,
+.answer-display,
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.expr {
+  font-weight: 700;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+/* תרגיל חשבוני בתוך משפט עברי */
+.mathrun {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-weight: 700;
+}
+
+/* משפטים בעברית שמשלבים מספרים - נשארים בכיוון ימין-לשמאל */
+.expr-rtl {
+  direction: rtl;
+  unicode-bidi: isolate;
+  white-space: normal;
+  font-size: clamp(22px, 5.4vw, 34px);
+}
+
+.expr-big {
+  font-size: clamp(28px, 7vw, 46px);
+  line-height: 1.5;
+  background: rgba(0, 0, 0, .25);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  margin: 6px 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.expr .blank {
+  display: inline-block;
+  min-width: 1.6em;
+  border-bottom: 4px solid var(--gold);
+  color: var(--gold);
+}
+
+/* ===== סרגל עליון ===== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  background: linear-gradient(180deg, rgba(21, 14, 43, .97), rgba(21, 14, 43, .82));
+  backdrop-filter: blur(6px);
+}
+
+.topbar-title {
+  font-weight: 700;
+  font-size: 19px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-stats { display: flex; gap: 8px; }
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 2px solid rgba(255, 255, 255, .08);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.chip-icon { font-size: 18px; }
+
+.icon-btn {
+  font-family: var(--font);
+  background: var(--panel);
+  color: var(--ink);
+  border: 2px solid rgba(255, 255, 255, .08);
+  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.icon-btn:active { transform: scale(.94); }
+
+/* ===== מסכים ===== */
+.screen { padding-top: 10px; animation: fade-in .25s ease; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 2px solid rgba(255, 255, 255, .08);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.title-big {
+  font-size: clamp(30px, 8vw, 44px);
+  font-weight: 900;
+  margin: 0 0 6px;
+  background: linear-gradient(90deg, var(--gold), #ff9d5c, var(--purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-align: center;
+}
+
+.title-mid { font-size: 26px; margin: 0 0 6px; text-align: center; }
+.subtitle { color: var(--ink-dim); margin: 0 0 14px; text-align: center; font-size: 16px; }
+
+/* ===== כפתורים ===== */
+.btn {
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 19px;
+  color: #201338;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  min-height: 54px;
+  transition: transform .08s ease, filter .15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:active { transform: scale(.96); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-xl { width: 100%; font-size: 21px; min-height: 62px; }
+.btn-emoji { font-size: 22px; }
+
+.btn-primary { background: linear-gradient(180deg, #ffd977, var(--gold-deep)); box-shadow: 0 5px 0 #a8760a; }
+.btn-primary:active { box-shadow: 0 2px 0 #a8760a; }
+.btn-secondary { background: linear-gradient(180deg, #8fd8ff, #3f8ddb); color: #06203a; box-shadow: 0 5px 0 #245d94; }
+.btn-secondary:active { box-shadow: 0 2px 0 #245d94; }
+.btn-ghost { background: rgba(255, 255, 255, .1); color: var(--ink); border: 2px solid rgba(255, 255, 255, .15); }
+.btn-danger { background: linear-gradient(180deg, #ff8f8f, var(--red-deep)); color: #fff; box-shadow: 0 5px 0 #8f2222; }
+.btn-hint { background: rgba(255, 204, 77, .18); color: var(--gold); border: 2px solid rgba(255, 204, 77, .5); font-size: 17px; }
+
+/* ===== יצירת לוחם ===== */
+.welcome-card { text-align: center; }
+.onb-step { margin: 16px 0; text-align: right; }
+.field-label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 18px; }
+
+.text-input {
+  font-family: var(--font);
+  font-size: 20px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, .15);
+  background: rgba(0, 0, 0, .25);
+  color: var(--ink);
+}
+
+.text-input:focus { outline: 3px solid var(--gold); }
+
+.color-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.color-dot {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-dot[aria-pressed="true"] { border-color: #fff; transform: scale(1.1); }
+
+.onb-preview { display: flex; justify-content: center; margin: 10px 0; }
+.error-text { color: var(--red); font-weight: 700; }
+.warn-text { color: var(--gold); font-size: 15px; line-height: 1.5; }
+
+/* ===== דמות ===== */
+.avatar-box svg { display: block; width: 100%; height: auto; }
+.avatar-box { width: 190px; }
+.avatar-box.small { width: 130px; }
+.avatar-box.big { width: 210px; }
+.avatar-box.huge { width: 100%; max-width: 320px; }
+
+.avatar-card { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.name-plate { text-align: center; }
+.warrior-name { font-size: 24px; font-weight: 900; }
+.rank-line { color: var(--ink-dim); font-size: 16px; }
+
+.home-grid { display: flex; flex-direction: column; }
+.home-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.streak-card { text-align: center; }
+.streak-text { font-weight: 700; font-size: 17px; }
+.progress-note { color: var(--ink-dim); font-size: 15px; margin-top: 6px; }
+
+/* ===== קרב ===== */
+.battle-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 190px;
+}
+
+.monster-zone { flex: 1; text-align: center; position: relative; }
+.monster-name { font-weight: 900; font-size: 20px; margin-bottom: 6px; }
+.monster-art svg { width: 100%; max-width: 210px; height: auto; }
+.monster-art { display: flex; justify-content: center; }
+
+.hp-bar {
+  height: 18px;
+  background: rgba(0, 0, 0, .45);
+  border: 2px solid rgba(255, 255, 255, .15);
+  border-radius: 999px;
+  overflow: hidden;
+  max-width: 260px;
+  margin: 0 auto 8px;
+}
+
+.hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--green-deep), var(--green));
+  transition: width .6s cubic-bezier(.2, .8, .3, 1);
+}
+
+.hero-zone { width: 130px; }
+
+.damage-pop {
+  position: absolute;
+  top: 40%;
+  right: 50%;
+  transform: translateX(50%);
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 3px 0 #7a4c00;
+  animation: pop-up 1s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes pop-up {
+  0% { opacity: 0; transform: translate(50%, 10px) scale(.6); }
+  30% { opacity: 1; transform: translate(50%, -10px) scale(1.2); }
+  100% { opacity: 0; transform: translate(50%, -55px) scale(1); }
+}
+
+.attack-anim { animation: attack-move .5s ease; }
+@keyframes attack-move {
+  0% { transform: none; }
+  40% { transform: translateX(-26px) rotate(-8deg); }
+  100% { transform: none; }
+}
+
+.shake-anim { animation: shake .45s ease; }
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(10px) rotate(3deg); }
+  45% { transform: translateX(-10px) rotate(-3deg); }
+  70% { transform: translateX(6px); }
+}
+
+.battle-progress { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
+
+.pip {
+  width: 34px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .15);
+}
+
+.pip.good { background: var(--green); }
+.pip.half { background: var(--gold); }
+.pip.bad { background: var(--red); }
+.pip.current { outline: 2px solid #fff; }
+
+/* ===== שאלה ===== */
+.question-card { text-align: center; }
+.q-topic { color: var(--ink-dim); font-size: 15px; margin-bottom: 8px; }
+.q-body { font-size: 20px; line-height: 1.6; }
+.q-text { margin-bottom: 8px; }
+
+.mission-card {
+  background: rgba(0, 0, 0, .22);
+  border: 2px dashed rgba(255, 204, 77, .4);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  text-align: right;
+  line-height: 1.8;
+  font-size: 19px;
+}
+
+.mission-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.key-num {
+  background: rgba(255, 204, 77, .25);
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-weight: 900;
+  color: #fff;
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.read-btn {
+  font-family: var(--font);
+  background: rgba(89, 169, 255, .2);
+  border: 2px solid rgba(89, 169, 255, .5);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.scratchpad {
+  width: 100%;
+  min-height: 70px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, .15);
+  background: rgba(0, 0, 0, .3);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  padding: 10px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.q-feedback {
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  text-align: right;
+  line-height: 1.7;
+  font-size: 17px;
+}
+
+.q-feedback.good { background: rgba(77, 219, 139, .16); border: 2px solid rgba(77, 219, 139, .5); }
+.q-feedback.hint { background: rgba(255, 204, 77, .14); border: 2px solid rgba(255, 204, 77, .45); }
+.q-feedback.solve { background: rgba(89, 169, 255, .14); border: 2px solid rgba(89, 169, 255, .45); }
+.q-feedback ol { margin: 8px 0 0; padding-inline-start: 22px; }
+.q-feedback li { margin-bottom: 6px; }
+.fb-title { font-weight: 900; display: block; margin-bottom: 4px; }
+
+/* ===== אזור תשובה ===== */
+.answer-area { margin-top: 6px; }
+.answer-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+
+.answer-display {
+  min-width: 170px;
+  min-height: 62px;
+  background: rgba(0, 0, 0, .35);
+  border: 3px solid var(--gold);
+  border-radius: 14px;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 56px;
+  text-align: center;
+  padding: 0 16px;
+}
+
+.answer-display .placeholder { color: rgba(255, 255, 255, .3); }
+.answer-display.wrong { border-color: var(--red); animation: shake .4s ease; }
+.answer-display.right { border-color: var(--green); }
+.answer-unit { font-size: 20px; font-weight: 700; color: var(--ink-dim); }
+
+.keypad {
+  direction: ltr; /* מקלדת מספרים נקראת תמיד משמאל לימין */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 340px;
+  margin: 0 auto 12px;
+}
+
+.key {
+  font-family: var(--font);
+  font-size: 26px;
+  font-weight: 700;
+  min-height: 58px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, .12);
+  background: linear-gradient(180deg, #3d2a74, #2c1d57);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.key:active { transform: scale(.94); background: #4a337f; }
+.key.wide { grid-column: span 1; font-size: 20px; }
+.key.util { background: linear-gradient(180deg, #4a3480, #35235f); }
+
+.answer-buttons { display: flex; gap: 10px; }
+.answer-buttons .btn { flex: 1; }
+
+/* ===== סיכום ===== */
+.summary-card { text-align: center; }
+.summary-art { font-size: 60px; margin: 6px 0; }
+.summary-list { list-style: none; padding: 0; margin: 0 0 16px; font-size: 19px; }
+
+.summary-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.summary-list li.bonus { color: var(--gold); font-weight: 700; }
+.summary-buttons { display: flex; flex-direction: column; gap: 10px; }
+
+/* ===== חנות ===== */
+.shop-head { text-align: center; margin-bottom: 10px; }
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.shop-item {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 2px solid rgba(255, 255, 255, .1);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop-item.tier-rare { border-color: rgba(89, 169, 255, .6); }
+.shop-item.tier-epic { border-color: rgba(181, 123, 255, .7); }
+.shop-item.tier-legend { border-color: rgba(255, 204, 77, .85); box-shadow: 0 0 18px rgba(255, 204, 77, .25); }
+
+.item-art { height: 84px; display: flex; align-items: center; justify-content: center; }
+.item-art svg { height: 84px; width: auto; }
+.item-name { font-weight: 700; font-size: 16px; }
+
+.item-tier { font-size: 13px; color: var(--ink-dim); }
+.tier-rare .item-tier { color: var(--blue); }
+.tier-epic .item-tier { color: var(--purple); }
+.tier-legend .item-tier { color: var(--gold); }
+
+.item-price { font-weight: 900; }
+.shop-item .btn { font-size: 16px; min-height: 46px; padding: 10px; }
+.owned-tag { color: var(--green); font-weight: 700; font-size: 15px; }
+
+/* ===== חדר הנשק ===== */
+.armory-wrap { display: flex; flex-direction: column; gap: 12px; }
+.armory-avatar { display: flex; justify-content: center; }
+.armory-slots { display: flex; flex-direction: column; gap: 12px; }
+
+.slot-row {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 2px solid rgba(255, 255, 255, .1);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.slot-title { font-weight: 700; margin-bottom: 8px; }
+.slot-options { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.slot-opt {
+  font-family: var(--font);
+  min-width: 72px;
+  min-height: 72px;
+  border-radius: 14px;
+  border: 3px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .25);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 6px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.slot-opt svg { height: 40px; width: auto; }
+.slot-opt[aria-pressed="true"] { border-color: var(--gold); background: rgba(255, 204, 77, .18); }
+
+/* ===== הגדרות ===== */
+.settings-card { text-align: center; }
+.settings-group { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.settings-group.danger { border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 16px; }
+.small-note { color: var(--ink-dim); font-size: 14px; margin: 0; }
+
+.save-text {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, .15);
+  background: rgba(0, 0, 0, .35);
+  color: var(--ink);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* ===== חלונית ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 4, 20, .78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 100;
+}
+
+.modal-box {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 2px solid rgba(255, 255, 255, .15);
+  border-radius: var(--radius);
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.modal-title { margin: 0 0 10px; font-size: 22px; }
+.modal-body { line-height: 1.6; margin-bottom: 16px; }
+.modal-buttons { display: flex; gap: 10px; }
+.modal-buttons .btn { flex: 1; }
+
+/* ===== טוסט ===== */
+.toast {
+  position: fixed;
+  bottom: 22px;
+  right: 50%;
+  transform: translateX(50%);
+  background: var(--panel-2);
+  border: 2px solid var(--gold);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-weight: 700;
+  z-index: 200;
+  box-shadow: var(--shadow);
+  animation: toast-in .25s ease;
+  max-width: 90vw;
+  text-align: center;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(50%, 14px); }
+  to { opacity: 1; transform: translateX(50%); }
+}
+
+/* ===== עליית דרגה ===== */
+.levelup {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 4, 20, .6);
+  z-index: 150;
+}
+
+.levelup-inner { text-align: center; animation: level-pop .8s cubic-bezier(.2, 1.4, .4, 1); }
+.levelup-star { font-size: 90px; animation: spin 1.2s ease; }
+#levelup-text { font-size: 28px; font-weight: 900; color: var(--gold); }
+
+@keyframes level-pop {
+  from { transform: scale(.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(-180deg) scale(.4); }
+  to { transform: rotate(0) scale(1); }
+}
+
+/* ===== מסך רחב ===== */
+@media (min-width: 720px) {
+  body { font-size: 19px; }
+  .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .avatar-card { grid-row: span 2; }
+  .armory-wrap { flex-direction: row; align-items: flex-start; }
+  .armory-avatar { flex: 0 0 320px; position: sticky; top: 70px; }
+  .armory-slots { flex: 1; }
+  .summary-buttons, .settings-group { flex-direction: row; }
+  .keypad { max-width: 400px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

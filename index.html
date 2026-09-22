@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1033">
+<title>לוחמי דרקונים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== סרגל עליון ===== -->
+  <header id="topbar" class="topbar" hidden>
+    <button id="btn-back" class="icon-btn" type="button" aria-label="חזרה">→</button>
+    <div class="topbar-title" id="topbar-title">לוחמי דרקונים</div>
+    <div class="topbar-stats">
+      <div class="stat-chip" title="מטבעות">
+        <span class="chip-icon">🪙</span><span id="hud-coins" class="num">0</span>
+      </div>
+      <div class="stat-chip" title="נקודות ניסיון">
+        <span class="chip-icon">⭐</span><span id="hud-xp" class="num">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="screens">
+
+    <!-- ===== מסך פתיחה / יצירת לוחם ===== -->
+    <section id="screen-onboarding" class="screen">
+      <div class="card welcome-card">
+        <h1 class="title-big">לוחמי דרקונים</h1>
+        <p class="subtitle">בונים לוחם, מאמנים דרקון, ומנצחים מפלצות בעזרת חשבון.</p>
+
+        <div class="onb-step">
+          <label class="field-label" for="inp-warrior">איך קוראים ללוחם שלך?</label>
+          <input id="inp-warrior" class="text-input" type="text" maxlength="14" placeholder="לדוגמה: אריאל" autocomplete="off">
+        </div>
+
+        <div class="onb-step">
+          <span class="field-label">בחרו צבע לשריון</span>
+          <div id="color-picker" class="color-row"></div>
+        </div>
+
+        <div class="onb-step">
+          <label class="field-label" for="inp-dragon">איך קוראים לדרקון שלך?</label>
+          <input id="inp-dragon" class="text-input" type="text" maxlength="14" placeholder="לדוגמה: להבה" autocomplete="off">
+        </div>
+
+        <div class="onb-preview">
+          <div id="onb-avatar" class="avatar-box"></div>
+        </div>
+
+        <p id="onb-error" class="error-text" hidden></p>
+        <button id="btn-start" class="btn btn-primary btn-xl" type="button">יוצאים לדרך!</button>
+      </div>
+    </section>
+
+    <!-- ===== מסך הבית ===== -->
+    <section id="screen-home" class="screen" hidden>
+      <div class="home-grid">
+        <div class="card avatar-card">
+          <div id="home-avatar" class="avatar-box big"></div>
+          <div class="name-plate">
+            <div id="home-name" class="warrior-name"></div>
+            <div id="home-rank" class="rank-line"></div>
+          </div>
+        </div>
+
+        <div class="home-actions">
+          <button id="btn-battle" class="btn btn-primary btn-xl" type="button">
+            <span class="btn-emoji">⚔️</span> יוצאים לקרב!
+          </button>
+          <button id="btn-shop" class="btn btn-secondary btn-xl" type="button">
+            <span class="btn-emoji">🛒</span> חנות
+          </button>
+          <button id="btn-armory" class="btn btn-secondary btn-xl" type="button">
+            <span class="btn-emoji">🛡️</span> חדר הנשק
+          </button>
+          <button id="btn-settings" class="btn btn-ghost" type="button">
+            <span class="btn-emoji">⚙️</span> הגדרות וגיבוי
+          </button>
+        </div>
+
+        <div class="card streak-card">
+          <div id="home-streak" class="streak-text"></div>
+          <div id="home-progress" class="progress-note"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== מסך קרב ===== -->
+    <section id="screen-battle" class="screen" hidden>
+      <div class="battle-top">
+        <div class="monster-zone">
+          <div id="monster-name" class="monster-name"></div>
+          <div class="hp-bar"><div id="hp-fill" class="hp-fill"></div></div>
+          <div id="monster-art" class="monster-art"></div>
+          <div id="damage-pop" class="damage-pop" hidden></div>
+        </div>
+        <div class="hero-zone">
+          <div id="battle-avatar" class="avatar-box small"></div>
+        </div>
+      </div>
+
+      <div class="battle-progress" id="battle-progress"></div>
+
+      <div class="card question-card">
+        <div id="q-topic" class="q-topic"></div>
+        <div id="q-body" class="q-body"></div>
+        <div id="q-feedback" class="q-feedback" hidden></div>
+      </div>
+
+      <div class="answer-area">
+        <div class="answer-row">
+          <div id="answer-display" class="answer-display" dir="ltr"><span class="placeholder">?</span></div>
+          <span id="answer-unit" class="answer-unit"></span>
+        </div>
+        <div id="keypad" class="keypad"></div>
+        <div class="answer-buttons">
+          <button id="btn-hint" class="btn btn-hint" type="button">💡 רמז (2 🪙)</button>
+          <button id="btn-submit" class="btn btn-primary" type="button">בדיקה</button>
+          <button id="btn-next" class="btn btn-primary" type="button" hidden>המשך ←</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== מסך סיכום ===== -->
+    <section id="screen-summary" class="screen" hidden>
+      <div class="card summary-card">
+        <h2 id="summary-title" class="title-mid">סיכום הקרב</h2>
+        <div id="summary-art" class="summary-art"></div>
+        <ul id="summary-list" class="summary-list"></ul>
+        <div class="summary-buttons">
+          <button id="btn-summary-shop" class="btn btn-secondary btn-xl" type="button">🛒 לחנות</button>
+          <button id="btn-summary-home" class="btn btn-primary btn-xl" type="button">🏠 חזרה הביתה</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== חנות ===== -->
+    <section id="screen-shop" class="screen" hidden>
+      <div class="shop-head">
+        <h2 class="title-mid">חנות הלוחמים</h2>
+        <p class="subtitle">אוספים מטבעות בקרבות וקונים ציוד לדרקון וללוחם.</p>
+      </div>
+      <div id="shop-grid" class="shop-grid"></div>
+    </section>
+
+    <!-- ===== חדר הנשק ===== -->
+    <section id="screen-armory" class="screen" hidden>
+      <div class="armory-wrap">
+        <div class="card armory-avatar">
+          <div id="armory-avatar" class="avatar-box huge"></div>
+        </div>
+        <div id="armory-slots" class="armory-slots"></div>
+      </div>
+    </section>
+
+    <!-- ===== הגדרות וגיבוי ===== -->
+    <section id="screen-settings" class="screen" hidden>
+      <div class="card settings-card">
+        <h2 class="title-mid">הגדרות וגיבוי</h2>
+        <p class="subtitle">שומרים את ההתקדמות כדי שלא תאבד.</p>
+
+        <div class="settings-group">
+          <button id="btn-export" class="btn btn-secondary btn-xl" type="button">⬇️ גיבוי לקובץ</button>
+          <button id="btn-import" class="btn btn-secondary btn-xl" type="button">⬆️ שחזור מקובץ</button>
+          <input id="file-import" type="file" accept="application/json,.json" hidden>
+        </div>
+
+        <div class="settings-group">
+          <button id="btn-copy-save" class="btn btn-ghost" type="button">📋 העתקת הגיבוי כטקסט</button>
+          <button id="btn-paste-save" class="btn btn-ghost" type="button">📥 הדבקת טקסט גיבוי</button>
+        </div>
+
+        <textarea id="save-text" class="save-text" dir="ltr" spellcheck="false" hidden></textarea>
+        <div id="save-text-actions" class="settings-group" hidden>
+          <button id="btn-paste-apply" class="btn btn-primary" type="button">שחזור מהטקסט</button>
+          <button id="btn-paste-cancel" class="btn btn-ghost" type="button">ביטול</button>
+        </div>
+
+        <div class="settings-group danger">
+          <button id="btn-reset" class="btn btn-danger" type="button">🗑️ איפוס ההתקדמות</button>
+          <p class="small-note">פעולה זו מוחקת את כל ההתקדמות. מומלץ לעשות גיבוי קודם.</p>
+        </div>
+
+        <p id="storage-warning" class="warn-text" hidden>
+          שימו לב: הדפדפן חוסם שמירה מקומית, ולכן ההתקדמות תישמר רק עד לסגירת החלון. אפשר להשתמש בגיבוי לקובץ.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== חלונית הודעה / אישור ===== -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <h3 id="modal-title" class="modal-title"></h3>
+      <div id="modal-body" class="modal-body"></div>
+      <textarea id="modal-input" class="save-text" dir="ltr" spellcheck="false" hidden></textarea>
+      <div class="modal-buttons">
+        <button id="modal-cancel" class="btn btn-ghost" type="button">ביטול</button>
+        <button id="modal-ok" class="btn btn-primary" type="button">אישור</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="levelup" class="levelup" hidden><div class="levelup-inner"><div class="levelup-star">⭐</div><div id="levelup-text"></div></div></div>
+
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

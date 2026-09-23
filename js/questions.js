@@ -86,6 +86,28 @@ function genMultTable() {
   });
 }
 
+/* --- לוח הכפל למתחילים: כפולות של 2, 3, 4, 5 --- */
+function genMultSmall() {
+  const small = pick([2, 2, 3, 3, 4, 4, 5]);
+  const other = ri(1, 10);
+  // לפעמים המספר הקטן ראשון ולפעמים שני
+  const [a, b] = Math.random() < 0.5 ? [small, other] : [other, small];
+  const ans = a * b;
+  return Q({
+    type: 'mult_small',
+    topic: 'mult_table',
+    instruction: 'לוח הכפל - פתרו:',
+    expr: mulExpr(a, b),
+    exprPlain: `${a}*${b}`,
+    answer: ans,
+    hint: `ספרו בקפיצות של ${fmt(small)}: ${jumps(small, Math.min(other, 3))}... עד ${fmt(other)} קפיצות.`,
+    steps: [
+      `סופרים בקפיצות של ${fmt(small)}: ${jumps(small, other)}.`,
+      `עצרנו אחרי ${fmt(other)} קפיצות, ולכן ${fmt(a)} × ${fmt(b)} = ${fmt(ans)}.`,
+    ],
+  });
+}
+
 /* --- כפל דו-ספרתי בעשרות עגולות: 32×60, 26×50 --- */
 function genMultRoundTens() {
   const a = ri(12, 49);
@@ -323,6 +345,93 @@ function genMissing() {
     answer: k,
     hint: `כפל וחילוק הם פעולות הפוכות: ${fmt(T)} : ${fmt(a)} = ?`,
     steps: [`מחלקים: ${fmt(T)} : ${fmt(a)} = ${fmt(k)}.`, `בדיקה: ${fmt(k)} × ${fmt(a)} = ${fmt(T)}.`],
+  });
+}
+
+/* --- מספר חסר למתחילים: חיבור וחיסור --- */
+function genMissingAddSub() {
+  const form = ri(1, 4);
+  const a = ri(2, 12);
+  const k = ri(2, 12);
+
+  if (form === 1) {
+    // ? + a = T
+    const T = k + a;
+    return Q({
+      type: 'missing_easy_add',
+      topic: 'missing',
+      instruction: 'איזה מספר חסר?',
+      expr: `? + ${fmt(a)} = ${fmt(T)}`,
+      exprPlain: `x+${a}=${T}`,
+      answer: k,
+      hint: `כמה צריך להוסיף ל-${fmt(a)} כדי להגיע ל-${fmt(T)}? אפשר גם לחשב ${fmt(T)} − ${fmt(a)}.`,
+      steps: [`${fmt(T)} − ${fmt(a)} = ${fmt(k)}.`, `בדיקה: ${fmt(k)} + ${fmt(a)} = ${fmt(T)}.`],
+    });
+  }
+
+  if (form === 2) {
+    // a + ? = T
+    const T = a + k;
+    return Q({
+      type: 'missing_easy_add',
+      topic: 'missing',
+      instruction: 'איזה מספר חסר?',
+      expr: `${fmt(a)} + ? = ${fmt(T)}`,
+      exprPlain: `${a}+x=${T}`,
+      answer: k,
+      hint: `התחילו מ-${fmt(a)} וספרו קדימה עד ${fmt(T)}. כמה צעדים עשיתם?`,
+      steps: [`${fmt(T)} − ${fmt(a)} = ${fmt(k)}.`, `בדיקה: ${fmt(a)} + ${fmt(k)} = ${fmt(T)}.`],
+    });
+  }
+
+  if (form === 3) {
+    // ? − a = k
+    const T = k + a;
+    return Q({
+      type: 'missing_easy_add',
+      topic: 'missing',
+      instruction: 'איזה מספר חסר?',
+      expr: `? − ${fmt(a)} = ${fmt(k)}`,
+      exprPlain: `x-${a}=${k}`,
+      answer: T,
+      hint: `איזה מספר, כשמורידים ממנו ${fmt(a)}, נשאר ${fmt(k)}? חיבור הוא הפעולה ההפוכה לחיסור.`,
+      steps: [`${fmt(k)} + ${fmt(a)} = ${fmt(T)}.`, `בדיקה: ${fmt(T)} − ${fmt(a)} = ${fmt(k)}.`],
+    });
+  }
+
+  // T − ? = k
+  const T = k + a;
+  return Q({
+    type: 'missing_easy_add',
+    topic: 'missing',
+    instruction: 'איזה מספר חסר?',
+    expr: `${fmt(T)} − ? = ${fmt(k)}`,
+    exprPlain: `${T}-x=${k}`,
+    answer: a,
+    hint: `כמה צריך להוריד מ-${fmt(T)} כדי שיישאר ${fmt(k)}?`,
+    steps: [`${fmt(T)} − ${fmt(k)} = ${fmt(a)}.`, `בדיקה: ${fmt(T)} − ${fmt(a)} = ${fmt(k)}.`],
+  });
+}
+
+/* --- מספר חסר למתחילים: כפל במספרים קטנים --- */
+function genMissingMulSmall() {
+  const a = pick([2, 3, 4, 5]);
+  const k = ri(1, 10);
+  const T = a * k;
+  const first = Math.random() < 0.5;
+  return Q({
+    type: 'missing_easy_mul',
+    topic: 'missing',
+    instruction: 'איזה מספר חסר?',
+    expr: first ? `? × ${fmt(a)} = ${fmt(T)}` : `${fmt(a)} × ? = ${fmt(T)}`,
+    exprPlain: first ? `x*${a}=${T}` : `${a}*x=${T}`,
+    answer: k,
+    hint: `ספרו בקפיצות של ${fmt(a)} עד שמגיעים ל-${fmt(T)}. כמה קפיצות היו?`,
+    steps: [
+      `קפיצות של ${fmt(a)}: ${jumps(a, k)}.`,
+      `היו ${fmt(k)} קפיצות, ולכן המספר החסר הוא ${fmt(k)}.`,
+      `בדיקה: ${fmt(k)} × ${fmt(a)} = ${fmt(T)}.`,
+    ],
   });
 }
 
@@ -1299,6 +1408,8 @@ function genChart() {
 /* ============================ רישום הגנרטורים ============================ */
 
 export const GENERATORS = [
+  // level: 'easy' - שאלות למתחילים, מופיעות בעיקר כשהנושא עוד חדש (ראו topicLevel)
+  { type: 'mult_small', topic: 'mult_table', weight: 3, level: 'easy', gen: genMultSmall },
   { type: 'mult_table', topic: 'mult_table', weight: 3, gen: genMultTable },
   { type: 'mult_round_tens', topic: 'mult_big', weight: 1.2, gen: genMultRoundTens },
   { type: 'mult_by_unit', topic: 'mult_big', weight: 1, gen: genMultByUnit },
@@ -1306,6 +1417,8 @@ export const GENERATORS = [
   { type: 'sub4', topic: 'add_sub', weight: 1.1, gen: genSub4 },
   { type: 'order_ops', topic: 'order_ops', weight: 0.9, gen: genOrderOps },
   { type: 'order_ops_tap', topic: 'order_ops', weight: 1.2, gen: genOrderOpsTap },
+  { type: 'missing_easy_add', topic: 'missing', weight: 1.3, level: 'easy', gen: genMissingAddSub },
+  { type: 'missing_easy_mul', topic: 'missing', weight: 1.3, level: 'easy', gen: genMissingMulSmall },
   { type: 'missing', topic: 'missing', weight: 1.3, gen: genMissing },
   { type: 'weight', topic: 'weight', weight: 1, gen: genWeight },
   { type: 'numberline_fill', topic: 'numberline', weight: 1.1, gen: genNumberLineFill },
@@ -1801,6 +1914,34 @@ function topicWeight(stats, topicId) {
 }
 
 /**
+ * רמת הנושא: 0 = מתחילים, 1 = רגיל.
+ * עוברים לרגיל אחרי מספיק תרגול עם דיוק טוב, וחוזרים למתחילים אם הדיוק יורד.
+ */
+export function topicLevel(stats, topicId) {
+  const t = stats?.byTopic?.[topicId];
+  if (!t || t.answered < 10) return 0;
+  return t.firstTry / t.answered >= 0.75 ? 1 : 0;
+}
+
+function topicHasEasy(topicId) {
+  return GENERATORS.some((x) => x.topic === topicId && x.level === 'easy');
+}
+
+/** למתחילים - הרבה שאלות קלות ומעט רגילות. ברמה רגילה - קלות מדי פעם לחימום */
+function levelWeight(stats, g) {
+  const lvl = topicLevel(stats, g.topic);
+  if (g.level === 'easy') return lvl === 0 ? 3 : 0.25;
+  // לכל נושא שאין בו שאלות קלות - אין שינוי
+  return topicHasEasy(g.topic) && lvl === 0 ? 0.35 : 1;
+}
+
+/** האם השאלה מתאימה לרמה הנוכחית בנושא (ולכן מותר לחזור עליה באותו קרב) */
+function matchesLevel(stats, g) {
+  if (!topicHasEasy(g.topic)) return false;
+  return (g.level === 'easy') === (topicLevel(stats, g.topic) === 0);
+}
+
+/**
  * בניית קרב.
  * options: { count, topic }
  *  - topic: קרב באזור מסוים. ללא topic - "קרב מעורב" שנותן משקל גבוה יותר
@@ -1830,8 +1971,10 @@ export function buildBattle(saveState, options = {}) {
     }
   }
 
-  // 2. שאלה מדף התרגול של המורה
-  if (questions.length < count) {
+  // 2. שאלה מדף התרגול של המורה (באזור שיש בו שלב מתחילים - רק אחרי שעברו אותו)
+  const beginnerRegion = topic && topicLevel(stats, topic) === 0
+    && GENERATORS.some((g) => g.topic === topic && g.level === 'easy');
+  if (questions.length < count && !beginnerRegion) {
     const tq = randomTeacherQuestion(topic);
     if (tq && !usedTypes.has(tq.type)) {
       questions.push(tq);
@@ -1843,8 +1986,9 @@ export function buildBattle(saveState, options = {}) {
   while (questions.length < count) {
     let q = null;
     for (let attempt = 0; attempt < 10; attempt++) {
-      const g = weightedPick(fallback, (x) => x.weight * topicWeight(stats, x.topic));
-      if (usedTypes.has(g.type) && attempt < 7) continue;
+      const g = weightedPick(fallback, (x) => x.weight * topicWeight(stats, x.topic) * levelWeight(stats, x));
+      // שאלה שמתאימה לרמה מותר לחזור עליה, כדי שהגיוון לא ידחוף את הקרב לרמה הלא נכונה
+      if (usedTypes.has(g.type) && !matchesLevel(stats, g) && attempt < 7) continue;
       usedTypes.add(g.type);
       q = g.gen();
       break;

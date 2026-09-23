@@ -975,6 +975,7 @@ body {
 .lightning-card { text-align: center; }
 .lightning-title { font-size: 28px; font-weight: 900; color: var(--gold); margin-bottom: 4px; }
 .best-row { font-size: 19px; margin-bottom: 14px; }
+.lightning-easy-btn { margin-top: 12px; font-size: 18px; }
 .big-score { font-size: 64px; font-weight: 900; color: var(--gold); line-height: 1.1; }
 
 .lightning-hud { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }

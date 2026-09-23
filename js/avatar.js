@@ -92,42 +92,49 @@ const HELMETS = {
     </g>`,
 };
 
+// כל השריונות בנויים על אותו קו מתאר, שעוטף בדיוק את הטוניקה של הגוף (baseBody)
+// כדי שהשריון ישב על הדמות ולא תבצבץ מתחתיו הטוניקה בצדדים או למטה.
+// החזה מתחיל מתחת לסנטר, והחצאית מכסה את החגורה ונגמרת בגובה תחתית הטוניקה.
+const ARMOR_TORSO = 'M112 131c-20 0-33 6-38 18l-7 33h90l-7-33c-5-12-18-18-38-18z';
+const ARMOR_TORSO_LIGHT = 'M112 131c-20 0-33 6-38 18l-7 33h14l6-30c3-11 12-19 25-21z';
+const ARMOR_SKIRT = 'M68 182h88l2 12c2 11-5 19-16 19H82c-11 0-18-8-16-19z';
+
 const ARMORS = {
   a_leather: () => `
     <g class="layer-armor">
-      <path d="M112 132c-16 0-27 5-33 12l-4 30h74l-4-30c-6-7-17-12-33-12z" fill="#8a5a33"/>
-      <path d="M78 176h68l3 22H75z" fill="#71472a"/>
-      <circle cx="112" cy="156" r="9" fill="#d4a24c"/>
+      <path d="${ARMOR_TORSO}" fill="#8a5a33"/>
+      <path d="${ARMOR_SKIRT}" fill="#71472a"/>
+      <circle cx="112" cy="158" r="9" fill="#d4a24c"/>
     </g>`,
   a_steel: () => `
     <g class="layer-armor">
-      <path d="M112 130c-18 0-30 6-36 14l-5 34h82l-5-34c-6-8-18-14-36-14z" fill="#b9c4d0"/>
-      <path d="M112 130c-18 0-30 6-36 14l-5 34h16l3-30c3-10 11-16 22-17z" fill="#e2e9f1"/>
-      <path d="M76 180h72l3 20H73z" fill="#93a0ad"/>
+      <path d="${ARMOR_TORSO}" fill="#b9c4d0"/>
+      <path d="${ARMOR_TORSO_LIGHT}" fill="#e2e9f1"/>
+      <path d="${ARMOR_SKIRT}" fill="#93a0ad"/>
       <path d="M112 142l12 14-12 16-12-16z" fill="#6f7d8c"/>
     </g>`,
   a_forest: () => `
     <g class="layer-armor">
-      <path d="M112 132c-16 0-27 5-33 12l-4 30h74l-4-30c-6-7-17-12-33-12z" fill="#3f7d4a"/>
-      <path d="M78 176h68l3 22H75z" fill="#356840"/>
+      <path d="${ARMOR_TORSO}" fill="#3f7d4a"/>
+      <path d="${ARMOR_SKIRT}" fill="#356840"/>
       <path d="M112 146c6 4 9 10 8 16-7 1-12-3-14-9 1-3 3-5 6-7z" fill="#7ee0a3"/>
       <path d="M104 160c-5-1-9-5-9-10 5-2 10 0 12 5z" fill="#7ee0a3"/>
     </g>`,
   a_scale: (c) => `
     <g class="layer-armor">
-      <path d="M112 130c-18 0-30 6-36 14l-5 34h82l-5-34c-6-8-18-14-36-14z" fill="${shade(c, -0.3)}"/>
+      <path d="${ARMOR_TORSO}" fill="${shade(c, -0.3)}"/>
       ${[0, 1, 2].map((row) => [0, 1, 2, 3, 4].map((col) => {
     const x = 80 + col * 13 + (row % 2 ? 6 : 0);
     const y = 142 + row * 13;
     return `<path d="M${x} ${y}a7 7 0 0 1 12 0c0 6-6 10-6 10s-6-4-6-10z" fill="${shade(c, 0.15)}" opacity=".9"/>`;
   }).join('')).join('')}
-      <path d="M76 180h72l3 20H73z" fill="${shade(c, -0.5)}"/>
+      <path d="${ARMOR_SKIRT}" fill="${shade(c, -0.5)}"/>
     </g>`,
   a_gold: () => `
     <g class="layer-armor">
-      <path d="M112 128c-19 0-32 7-38 15l-5 36h86l-5-36c-6-8-19-15-38-15z" fill="#e0a213"/>
-      <path d="M112 128c-19 0-32 7-38 15l-5 36h16l4-32c3-11 12-17 23-18z" fill="#ffe08a"/>
-      <path d="M74 180h76l3 20H71z" fill="#b8820c"/>
+      <path d="${ARMOR_TORSO}" fill="#e0a213"/>
+      <path d="${ARMOR_TORSO_LIGHT}" fill="#ffe08a"/>
+      <path d="${ARMOR_SKIRT}" fill="#b8820c"/>
       <path d="M112 140l14 12-6 18h-16l-6-18z" fill="#fff3c4"/>
       <circle cx="112" cy="158" r="5" fill="#ff6b6b"/>
     </g>`,
@@ -317,6 +324,81 @@ const AURAS = {
     </g>`,
 };
 
+/* ============================ אביזרים לדרקון ============================ */
+// מצוירים בקואורדינטות של הדרקונון (ראש במרכז 192,222 - צוואר סביב 194,242).
+// בשלבים הגדולים הם גדלים יחד עם הדרקון, ועל הביצה הם מוזזים (ראו dragon).
+
+const DRAGON_HEADS = {
+  dh_bow: () => `
+    <g class="layer-dragon-head">
+      <path d="M192 205c-4-6-12-9-15-5-2 4 2 10 15 5zM192 205c4-6 12-9 15-5 2 4-2 10-15 5z" fill="#ff6b9d"/>
+      <path d="M190 204c-3-2-7-3-9-2M194 204c3-2 7-3 9-2" stroke="#ffb3cc" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="192" cy="205" r="3.5" fill="#e0306a"/>
+    </g>`,
+  dh_party: () => `
+    <g class="layer-dragon-head">
+      <path d="M180 207l12-30 12 30z" fill="#59a9ff"/>
+      <path d="M180 207l12-30 3 30z" fill="#8fd0ff"/>
+      <circle cx="188" cy="200" r="2" fill="#fff"/>
+      <circle cx="197" cy="195" r="2" fill="#fff"/>
+      <circle cx="192" cy="188" r="1.8" fill="#fff"/>
+      <path d="M179 206q13 5 26 0" stroke="#ffcc4d" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="192" cy="177" r="4" fill="#ffcc4d"/>
+    </g>`,
+  dh_crown: () => `
+    <g class="layer-dragon-head">
+      <path d="M179 207v-14l6 6 7-10 7 10 6-6v14z" fill="#ffcc4d"/>
+      <path d="M179 207v-14l6 6 7-10v18z" fill="#ffe08a"/>
+      <rect x="178" y="203" width="28" height="5" rx="2.5" fill="#e0a213"/>
+      <circle cx="192" cy="197" r="2.6" fill="#ff6b6b"/>
+      <circle cx="184" cy="201" r="1.8" fill="#59a9ff"/>
+      <circle cx="200" cy="201" r="1.8" fill="#4ddb8b"/>
+    </g>`,
+  dh_wizard: () => `
+    <g class="layer-dragon-head">
+      <path d="M182 206c3-10 5-22 16-34-2 6 0 10 4 12-3 6-2 14 1 22z" fill="#7b45d6"/>
+      <path d="M182 206c3-10 5-22 16-34-4 12-6 22-7 34z" fill="#9b6bf0"/>
+      <ellipse cx="192" cy="206" rx="17" ry="4" fill="#5b2a8c"/>
+      <path d="M193 186l1.5 3.5 3.5.5-2.6 2.4.7 3.6-3.1-1.8-3.1 1.8.7-3.6-2.6-2.4 3.5-.5z" fill="#ffcc4d"/>
+      <circle cx="187" cy="198" r="1.3" fill="#ffe08a"/>
+    </g>`,
+};
+
+// הצווארון יושב מתחת לסנטר, בחיבור בין הראש לגוף
+const DRAGON_COLLAR = 'M175 238q19 10 38 0l1 6q-20 11-40 0z';
+
+const DRAGON_NECKS = {
+  dn_scarf: () => `
+    <g class="layer-dragon-neck">
+      <path d="${DRAGON_COLLAR}" fill="#e04848"/>
+      <path d="M200 242l7 15-7 2-4-15z" fill="#c43636"/>
+      <path d="M199 250l6-2M201 255l6-2" stroke="#ffd0d0" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M180 241l3 2M189 244l3 1" stroke="#ffd0d0" stroke-width="1.6" stroke-linecap="round"/>
+    </g>`,
+  dn_bell: () => `
+    <g class="layer-dragon-neck">
+      <path d="${DRAGON_COLLAR}" fill="#8a5a33"/>
+      <circle cx="194" cy="250" r="4.5" fill="#ffcc4d"/>
+      <circle cx="192.5" cy="248.5" r="1.4" fill="#fff3c4"/>
+      <path d="M191 251.5h6" stroke="#b8820c" stroke-width="1.4" stroke-linecap="round"/>
+    </g>`,
+  dn_medal: () => `
+    <g class="layer-dragon-neck">
+      <path d="${DRAGON_COLLAR}" fill="#3f8ddb"/>
+      <path d="M190 245l4 6 4-6z" fill="#2a6ab0"/>
+      <circle cx="194" cy="254" r="6" fill="#ffcc4d"/>
+      <circle cx="194" cy="254" r="4.2" fill="#e0a213"/>
+      <path d="M194 250.5l1 2.3 2.4.2-1.8 1.6.5 2.4-2.1-1.3-2.1 1.3.5-2.4-1.8-1.6 2.4-.2z" fill="#fff3c4"/>
+    </g>`,
+  dn_gem: () => `
+    <g class="layer-dragon-neck">
+      <path d="M176 239q18 10 36 0" stroke="#ffcc4d" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-dasharray="3 1.5"/>
+      <path d="M194 244l6 6-6 8-6-8z" fill="#5ee0dc"/>
+      <path d="M194 244l6 6h-12z" fill="#c9fffc"/>
+      <path d="M194 244l6 6-6 8-6-8z" fill="none" stroke="#e0a213" stroke-width="1.4" stroke-linejoin="round"/>
+    </g>`,
+};
+
 const SLOT_SETS = {
   helmet: HELMETS,
   armor: ARMORS,
@@ -324,16 +406,20 @@ const SLOT_SETS = {
   shield: SHIELDS,
   cape: CAPES,
   aura: AURAS,
+  dragon_head: DRAGON_HEADS,
+  dragon_neck: DRAGON_NECKS,
 };
 
 /** מסגרת תצוגה מותאמת לכל סוג פריט, כדי שהתמונה בחנות לא תיחתך */
 const ITEM_VIEWBOX = {
   helmet: '30 40 164 76',
-  armor: '62 122 100 84',
+  armor: '60 126 104 92',
   weapon: '26 74 56 140',
   shield: '134 106 72 102',
   cape: '44 124 136 122',
   aura: '2 38 220 224',
+  dragon_head: '172 170 40 42',
+  dragon_neck: '170 232 48 30',
 };
 
 /**
@@ -357,12 +443,16 @@ export function itemArt(slot, id, color = '#59a9ff') {
 
 export const DRAGON_STAGES = ['ביצת דרקון', 'דרקונון', 'דרקון צעיר', 'דרקון אדיר'];
 
-function dragon(stage, c) {
+/** gear = { head, neck } - מחרוזות SVG של אביזרי הדרקון (או ריק) */
+function dragon(stage, c, gear = {}) {
   const body = shade(c, -0.05);
   const belly = shade(c, 0.45);
   const dark = shade(c, -0.45);
+  const head = gear.head || '';
+  const neck = gear.neck || '';
 
   if (stage <= 0) {
+    // על הביצה: הכובע יושב על הקודקוד והצווארון נהיה סרט סביב הביצה
     return `
       <g class="layer-dragon">
         <ellipse cx="196" cy="268" rx="26" ry="7" fill="rgba(0,0,0,.3)"/>
@@ -370,6 +460,8 @@ function dragon(stage, c) {
         <path d="M196 212c-13 0-24 13-24 30s11 30 24 30z" fill="${body}" opacity=".6"/>
         <path d="M180 236l6-8 6 8 6-8 6 8" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
         <path d="M180 254l6-8 6 8 6-8 6 8" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        ${neck ? `<g transform="translate(2 0)">${neck}</g>` : ''}
+        ${head ? `<g transform="translate(4 8)">${head}</g>` : ''}
       </g>`;
   }
 
@@ -385,16 +477,22 @@ function dragon(stage, c) {
       <ellipse cx="196" cy="250" rx="24" ry="22" fill="${body}"/>
       <ellipse cx="196" cy="256" rx="15" ry="14" fill="${belly}"/>
       <path d="M182 268l-4 10h8zM210 268l4 10h-8z" fill="${dark}"/>
+      ${neck}
       <ellipse cx="192" cy="222" rx="21" ry="19" fill="${body}"/>
-      <ellipse cx="180" cy="226" rx="11" ry="8" fill="${belly}"/>
       ${horns ? `<path d="M180 206l-6-14 12 8zM204 206l6-14-12 8z" fill="${dark}"/>` : ''}
+      <path d="M180 206c-6-8-12-8-16-4 6 1 8 5 8 10z" fill="${dark}"/>
       <path d="M204 206c6-8 12-8 16-4-6 1-8 5-8 10z" fill="${dark}"/>
-      <circle cx="186" cy="218" r="4.5" fill="#fff"/>
-      <circle cx="185" cy="219" r="2.4" fill="#231436"/>
+      <path d="M188 204l4-9 4 9" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="185" cy="217" r="4.5" fill="#fff"/>
+      <circle cx="185.5" cy="218" r="2.4" fill="#231436"/>
       <circle cx="199" cy="217" r="4.5" fill="#fff"/>
-      <circle cx="198" cy="218" r="2.4" fill="#231436"/>
-      <path d="M176 230c4 3 9 3 13 0" stroke="${dark}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-      <path d="M192 196l4-10 4 10" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="198.5" cy="218" r="2.4" fill="#231436"/>
+      <!-- החוטם במרכז הפנים, בדיוק בין העיניים -->
+      <ellipse cx="192" cy="229" rx="11" ry="7.5" fill="${belly}"/>
+      <circle cx="188.5" cy="227" r="1.3" fill="${dark}"/>
+      <circle cx="195.5" cy="227" r="1.3" fill="${dark}"/>
+      <path d="M186 231.5c4 3 8 3 12 0" stroke="${dark}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      ${head}
     </g>`;
 }
 
@@ -473,7 +571,7 @@ export function renderAvatar(opts = {}) {
   ${part('helmet')}
   ${part('shield')}
   ${part('weapon')}
-  ${showDragon ? dragon(stage, c) : ''}
+  ${showDragon ? dragon(stage, c, { head: part('dragon_head'), neck: part('dragon_neck') }) : ''}
 </svg>`;
 }
 

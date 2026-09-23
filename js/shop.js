@@ -17,6 +17,8 @@ export const SLOTS = [
   { id: 'shield', name: 'מגן' },
   { id: 'cape', name: 'גלימה' },
   { id: 'aura', name: 'הילה' },
+  { id: 'dragon_head', name: 'כובע לדרקון' },
+  { id: 'dragon_neck', name: 'צווארון לדרקון' },
 ];
 
 export const SLOT_NAMES = Object.fromEntries(SLOTS.map((s) => [s.id, s.name]));
@@ -65,6 +67,18 @@ export const CATALOG = [
   { id: 'au_ice', slot: 'aura', name: 'הילת הקרח', tier: 'epic', price: 300, minRank: 2 },
   { id: 'au_fire', slot: 'aura', name: 'הילת האש', tier: 'epic', price: 320, minRank: 2 },
   { id: 'au_storm', slot: 'aura', name: 'הילת הסופה', tier: 'legend', price: 620, minRank: 4 },
+
+  // --- לדרקון: כובעים ---
+  { id: 'dh_bow', slot: 'dragon_head', name: 'פפיון ורוד', tier: 'common', price: 30, minRank: 0 },
+  { id: 'dh_party', slot: 'dragon_head', name: 'כובע מסיבה', tier: 'common', price: 55, minRank: 0 },
+  { id: 'dh_crown', slot: 'dragon_head', name: 'כתר הדרקון', tier: 'rare', price: 140, minRank: 1 },
+  { id: 'dh_wizard', slot: 'dragon_head', name: 'כובע קוסם', tier: 'epic', price: 250, minRank: 2 },
+
+  // --- לדרקון: צווארונים ---
+  { id: 'dn_scarf', slot: 'dragon_neck', name: 'צעיף חם', tier: 'common', price: 35, minRank: 0 },
+  { id: 'dn_bell', slot: 'dragon_neck', name: 'קולר עם פעמון', tier: 'common', price: 60, minRank: 0 },
+  { id: 'dn_medal', slot: 'dragon_neck', name: 'מדליית אלוף', tier: 'rare', price: 150, minRank: 1 },
+  { id: 'dn_gem', slot: 'dragon_neck', name: 'שרשרת אבן הדרקון', tier: 'epic', price: 280, minRank: 2 },
 ];
 
 export function itemById(id) {

@@ -47,16 +47,54 @@ function chest(open) {
     </svg>`;
 }
 
+/* ============================ טיוטת פילוג ============================ */
+// שורות לחישובי ביניים מתחת לתרגיל (למשל 56 × 6 = 50 × 6 + 6 × 6).
+// זו טיוטה בלבד - לא נבדקת. שורה שחושבה נכון נצבעת בירוק כעידוד.
+
+const PAD_ROWS = [['×', (x, y) => x * y], ['×', (x, y) => x * y], ['+', (x, y) => x + y]];
+
+function distributePad() {
+  const cell = (i, j) => `<input class="pad-in" type="text" inputmode="numeric" maxlength="6"
+    data-row="${i}" data-col="${j}" aria-label="טיוטה">`;
+  const rows = PAD_ROWS.map(([op], i) => `
+    <div class="pad-row" data-row="${i}">
+      ${cell(i, 0)}<span class="pad-op">${op}</span>${cell(i, 1)}<span class="pad-op">=</span>${cell(i, 2)}
+    </div>`).join('');
+  return `
+    <div class="dist-pad">
+      <div class="pad-title">✏️ מקום לחישובים - פרקו את התרגיל לחלקים ואז חברו:</div>
+      <div class="pad-rows" dir="ltr">${rows}</div>
+    </div>`;
+}
+
+function wireDistributePad(host) {
+  const pad = host.querySelector('.dist-pad');
+  if (!pad) return;
+  pad.addEventListener('input', (e) => {
+    const inp = e.target.closest('.pad-in');
+    if (!inp) return;
+    inp.value = inp.value.replace(/[^\d]/g, '');
+    const i = Number(inp.dataset.row);
+    const vals = [...pad.querySelectorAll(`.pad-in[data-row="${i}"]`)].map((x) => (x.value === '' ? null : Number(x.value)));
+    const ok = vals.every((v) => v !== null) && PAD_ROWS[i][1](vals[0], vals[1]) === vals[2];
+    pad.querySelector(`.pad-row[data-row="${i}"]`).classList.toggle('ok', ok);
+  });
+}
+
 /* ============================ 1. תשובה מספרית / משימה ============================ */
 
 function numericUI(q, ctx) {
+  const withPad = q.topic === 'mult_big' && q.ui !== 'mission';
   return {
     usesKeypad: true,
     usesSubmit: true,
     mount(host) {
-      host.innerHTML = instructionLine(q) + (q.ui === 'mission' ? missionCard(q, ctx.canRead) : exprBox(q));
+      host.innerHTML = instructionLine(q)
+        + (q.ui === 'mission' ? missionCard(q, ctx.canRead) : exprBox(q))
+        + (withPad ? distributePad() : '');
       const btn = host.querySelector('#btn-read');
       if (btn) btn.onclick = () => ctx.speak(q.story.replace(/\[\[|\]\]/g, ''));
+      if (withPad) wireDistributePad(host);
     },
     submit() {
       const v = ctx.keypad.value();

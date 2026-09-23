@@ -1,7 +1,7 @@
 // battle.js - לולאת הקרב: 5 שאלות מול מפלצת, מטבעות, רמזים ופתרון מלא
 
 import { buildBattle, TOPICS } from './questions.js';
-import { randomMonster } from './monsters.js';
+import { randomMonster, moodFor } from './monsters.js';
 import { getState } from './storage.js';
 import { mountAvatar } from './avatar.js';
 import { createQuestionUI } from './qui.js';
@@ -124,7 +124,46 @@ function attackAnimation(damage) {
 
 function setHp(hp) {
   $('#hp-fill').style.width = `${Math.max(0, (hp / MONSTER_MAX_HP) * 100)}%`;
-  if (hp <= 0) setTimeout(() => $('#monster-art').classList.add('defeated'), 500);
+}
+
+/** ציור המפלצת עם הבעת פנים שמתאימה לנזק: מחיוך בהתחלה ועד פחד */
+function drawMonster() {
+  $('#monster-art').innerHTML = battle.monster.art(moodFor(battle.hp, MONSTER_MAX_HP));
+}
+
+/** פיצוץ המפלצת המובסת: הבזק, טבעת הדף ורסיסים שעפים לכל הכיוונים */
+function explodeMonster() {
+  const art = $('#monster-art');
+  const zone = art.parentElement;
+  zone.querySelectorAll('.boom').forEach((b) => b.remove());
+
+  const colors = ['#ffcc4d', '#ff8a3d', '#ff5a3d', '#fff3c4'];
+  const count = 16;
+  const bits = Array.from({ length: count }, (_, i) => {
+    const ang = (i / count) * Math.PI * 2 + Math.random() * 0.35;
+    const dist = 70 + Math.random() * 55;
+    const size = 8 + Math.round(Math.random() * 8);
+    return `<span class="boom-bit" style="--dx:${Math.round(Math.cos(ang) * dist)}px;--dy:${Math.round(Math.sin(ang) * dist)}px;width:${size}px;height:${size}px;background:${colors[i % colors.length]}"></span>`;
+  }).join('');
+
+  const boom = document.createElement('div');
+  boom.className = 'boom';
+  boom.style.top = `${art.offsetTop + art.offsetHeight / 2}px`;
+  boom.innerHTML = `<div class="boom-flash"></div><div class="boom-ring"></div>${bits}<div class="boom-word">💥</div>`;
+  zone.appendChild(boom);
+  art.classList.add('exploding');
+}
+
+const EXPLODE_DELAY = 450;     // אחרי מכת הלוחם
+const TO_SUMMARY_DELAY = 2300; // זמן לראות את הפיצוץ לפני חלון הניצחון
+
+function onMonsterDefeated() {
+  const current = battle;
+  setTimeout(() => { if (battle === current) explodeMonster(); }, EXPLODE_DELAY);
+  // בשאלה האחרונה עוברים לבד לחלון הניצחון (אם לא לחצו "המשך" קודם)
+  if (battle.index === battle.questions.length - 1) {
+    setTimeout(() => { if (battle === current && !current.finished) onNext(); }, TO_SUMMARY_DELAY);
+  }
 }
 
 /* ============================ פסק דין ============================ */
@@ -166,6 +205,8 @@ function handleVerdict(v) {
     answerInput.markRight();
     attackAnimation(damage);
     setHp(battle.hp);
+    drawMonster();
+    if (battle.hp <= 0) onMonsterDefeated();
 
     addCoins(coins);
     const lvl = addXp(xp);
@@ -277,6 +318,7 @@ function finishBattle() {
 
   $('#summary-title').textContent = defeated ? 'ניצחון! 🏆' : 'סוף הקרב';
   $('#summary-art').textContent = defeated ? '🐉⚔️' : '💪';
+  $('#summary-art').classList.toggle('victory-pop', defeated);
 
   const rows = [
     ['תשובות נכונות', `${fmt(correct)} מתוך ${fmt(total)}`],
@@ -330,8 +372,9 @@ export function startBattle(options = {}) {
   };
 
   $('#monster-name').textContent = monster.name;
-  $('#monster-art').innerHTML = monster.art();
-  $('#monster-art').classList.remove('defeated');
+  $('#monster-art').classList.remove('exploding');
+  document.querySelectorAll('#screen-battle .boom').forEach((b) => b.remove());
+  drawMonster();
   setHp(battle.hp);
 
   mountAvatar($('#battle-avatar'), {

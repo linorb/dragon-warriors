@@ -46,6 +46,8 @@ export function defaultSave() {
         shield: null,
         cape: null,
         aura: null,
+        dragon_head: null,
+        dragon_neck: null,
       },
     },
     stats: {
@@ -60,6 +62,7 @@ export function defaultSave() {
     reviewQueue: [],        // [{ type, topic, addedAt }]
     records: {
       lightningBest: 0,
+      lightningBestEasy: 0,
       shapeCollection: {},   // סוג שאלה -> רשימת הצורות שנמצאו, למשל { geo_rect_area: ['3 × 6'] }
     },
     settings: { readAloud: true },

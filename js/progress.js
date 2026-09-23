@@ -136,19 +136,21 @@ export function regionStars(topicId) {
 }
 
 /** שיא אישי במשחק "מתקפת ברק". מחזיר true אם נשבר שיא */
-export function saveLightningBest(score) {
+export function saveLightningBest(score, easy = false) {
+  const key = easy ? 'lightningBestEasy' : 'lightningBest';
   let isRecord = false;
   update((s) => {
-    if (score > (s.records.lightningBest || 0)) {
-      s.records.lightningBest = score;
+    if (score > (s.records[key] || 0)) {
+      s.records[key] = score;
       isRecord = true;
     }
   });
   return isRecord;
 }
 
-export function lightningBest() {
-  return getState().records.lightningBest || 0;
+/** שיא נפרד לרמה הקלה, כדי שלא יתערבב עם השיא הרגיל */
+export function lightningBest(easy = false) {
+  return getState().records[easy ? 'lightningBestEasy' : 'lightningBest'] || 0;
 }
 
 /* ============================ אוסף הצורות ============================ */

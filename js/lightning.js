@@ -12,9 +12,17 @@ let timer = null;
 
 /* ============================ שאלות ============================ */
 
-function nextFact() {
-  const a = pick([2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10]);
-  const b = pick([2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10]);
+/** easy = כפולות של 2 עד 5 בלבד */
+function nextFact(easy = false) {
+  let a, b;
+  if (easy) {
+    const small = pick([2, 2, 3, 3, 4, 4, 5]);
+    const other = ri(1, 10);
+    [a, b] = Math.random() < 0.5 ? [small, other] : [other, small];
+  } else {
+    a = pick([2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10]);
+    b = pick([2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10]);
+  }
   const answer = a * b;
 
   const candidates = new Set([answer]);
@@ -34,11 +42,13 @@ function drawIntro() {
     <div class="card lightning-card">
       <div class="lightning-title">⚡ מתקפת ברק</div>
       <p class="subtitle">${GAME_SECONDS} שניות. כמה תרגילי כפל תספיק לפתור?</p>
-      <div class="best-row">🏆 השיא שלך: <span class="num">${fmt(lightningBest())}</span></div>
+      <div class="best-row">🏆 השיא שלך: <span class="num">${fmt(lightningBest())}</span> · קל: <span class="num">${fmt(lightningBest(true))}</span></div>
       <button class="btn btn-primary btn-xl" type="button" id="btn-lightning-start">מתחילים!</button>
+      <button class="btn btn-secondary btn-xl lightning-easy-btn" type="button" id="btn-lightning-easy">🐣 מתחילים ברמה קלה (כפולות 2-5)</button>
       <p class="small-note">כל תשובה נכונה = מטבע ונקודות ניסיון. טעות לא מורידה כלום.</p>
     </div>`;
-  $('#btn-lightning-start').onclick = start;
+  $('#btn-lightning-start').onclick = () => start(false);
+  $('#btn-lightning-easy').onclick = () => start(true);
 }
 
 function drawGame(flash = '') {
@@ -71,14 +81,15 @@ function drawEnd(isRecord) {
       <div class="big-score num">${fmt(game.score)}</div>
       <p class="subtitle">תרגילים נכונים ב-${GAME_SECONDS} שניות</p>
       <ul class="summary-list">
-        <li><span>השיא שלך</span><span class="num">🏆 ${fmt(lightningBest())}</span></li>
+        <li><span>השיא שלך${game.easy ? ' (קל)' : ''}</span><span class="num">🏆 ${fmt(lightningBest(game.easy))}</span></li>
         <li><span>מטבעות</span><span class="num">🪙 +${fmt(coins)}</span></li>
         <li><span>נקודות ניסיון</span><span class="num">⭐ +${fmt(xp)}</span></li>
         <li><span>הרצף הארוך ביותר</span><span class="num">🔥 ${fmt(game.bestCombo)}</span></li>
       </ul>
       <button class="btn btn-primary btn-xl" type="button" id="btn-lightning-again">עוד סיבוב!</button>
     </div>`;
-  $('#btn-lightning-again').onclick = start;
+  const easy = game.easy;
+  $('#btn-lightning-again').onclick = () => start(easy);
 }
 
 /* ============================ לוגיקה ============================ */
@@ -91,7 +102,7 @@ function answer(v) {
     game.combo += 1;
     game.bestCombo = Math.max(game.bestCombo, game.combo);
     recordAnswer('mult_table', 'first');
-    game.q = nextFact();
+    game.q = nextFact(game.easy);
     drawGame('flash-good');
     setTimeout(() => { if (game && !game.over) drawGame(); }, 160);
   } else {
@@ -100,7 +111,7 @@ function answer(v) {
     const right = game.q.answer;
     drawGame('flash-bad');
     toast(`${fmt(game.q.a)} × ${fmt(game.q.b)} = ${fmt(right)}`, 1200);
-    game.q = nextFact();
+    game.q = nextFact(game.easy);
     setTimeout(() => { if (game && !game.over) drawGame(); }, 500);
   }
 }
@@ -123,7 +134,7 @@ function finish() {
   clearInterval(timer);
   timer = null;
 
-  const isRecord = saveLightningBest(game.score);
+  const isRecord = saveLightningBest(game.score, game.easy);
   addCoins(game.score);
   const lvl = addXp(game.score * 2);
   updateHUD();
@@ -133,9 +144,9 @@ function finish() {
   else if (lvl.leveledUp) celebrateLevelUp(`עלית לדרגת ${lvl.rank.name}!`);
 }
 
-function start() {
+function start(easy = false) {
   stopLightning();
-  game = { score: 0, combo: 0, bestCombo: 0, left: GAME_SECONDS, over: false, q: nextFact() };
+  game = { easy, score: 0, combo: 0, bestCombo: 0, left: GAME_SECONDS, over: false, q: nextFact(easy) };
   drawGame();
   timer = setInterval(tick, 100);
 }

@@ -1,4 +1,4 @@
-﻿// questions.js - מנוע השאלות: כל סוג שאלה הוא גנרטור שמייצר מספרים חדשים בכל פעם.
+// questions.js - מנוע השאלות: כל סוג שאלה הוא גנרטור שמייצר מספרים חדשים בכל פעם.
 // כל שאלה מחזירה: נוסח, תשובה נכונה, רמז, ופתרון מלא בשלבים.
 
 import { ri, pick, shuffle, weightedPick, fmt } from './util.js';
@@ -154,14 +154,16 @@ function genMultByUnit() {
   });
 }
 
-/* --- חיבור עד 4 ספרות עם המרה --- */
-function genAdd4() {
+/* --- חיבור עם המרה: מאות למתחילים, אלפים בהמשך --- */
+function genAdd4(level = 1) {
+  const hundreds = level === 0;
   let a, b;
   do {
-    a = ri(1005, 9899);
-    b = ri(1005, 9899);
+    a = hundreds ? ri(105, 489) : ri(1005, 9899);
+    b = hundreds ? ri(105, 489) : ri(1005, 9899);
   } while ((a % 10) + (b % 10) < 10); // לוודא שיש המרה לפחות ביחידות
   const ans = a + b;
+  const places = hundreds ? 'עשרות ומאות' : 'עשרות, מאות ואלפים';
   return Q({
     type: 'add4',
     topic: 'add_sub',
@@ -172,20 +174,22 @@ function genAdd4() {
     hint: `סדרו מאונך: יחידות מתחת ליחידות. ${a % 10} + ${b % 10} = ${(a % 10) + (b % 10)} - כותבים ${((a % 10) + (b % 10)) % 10} וממירים 1 לעשרות.`,
     steps: [
       `מחברים יחידות: ${a % 10} + ${b % 10} = ${(a % 10) + (b % 10)}.`,
-      `מחברים עשרות, מאות ואלפים, וזוכרים את ההמרות.`,
+      `מחברים ${places}, וזוכרים את ההמרות.`,
       `סך הכל: ${fmt(a)} + ${fmt(b)} = ${fmt(ans)}.`,
     ],
   });
 }
 
-/* --- חיסור עד 4 ספרות עם פריטה --- */
-function genSub4() {
+/* --- חיסור עם פריטה: מאות למתחילים, אלפים בהמשך --- */
+function genSub4(level = 1) {
+  const hundreds = level === 0;
   let a, b;
   do {
-    a = ri(3005, 9899);
-    b = ri(1005, a - 500);
+    a = hundreds ? ri(305, 989) : ri(3005, 9899);
+    b = hundreds ? ri(105, a - 50) : ri(1005, a - 500);
   } while ((a % 10) >= (b % 10)); // לוודא פריטה
   const ans = a - b;
+  const places = hundreds ? 'לעשרות ולמאות' : 'לעשרות, מאות ואלפים';
   return Q({
     type: 'sub4',
     topic: 'add_sub',
@@ -196,7 +200,7 @@ function genSub4() {
     hint: `ביחידות ${a % 10} קטן מ-${b % 10}, ולכן פורטים עשרת אחת: ${(a % 10) + 10} − ${b % 10} = ${(a % 10) + 10 - (b % 10)}.`,
     steps: [
       `ביחידות פורטים עשרת: ${(a % 10) + 10} − ${b % 10} = ${(a % 10) + 10 - (b % 10)}.`,
-      `ממשיכים לעשרות, מאות ואלפים וזוכרים את הפריטה.`,
+      `ממשיכים ${places} וזוכרים את הפריטה.`,
       `התוצאה: ${fmt(a)} − ${fmt(b)} = ${fmt(ans)}.`,
       `בדיקה: ${fmt(ans)} + ${fmt(b)} = ${fmt(a)}.`,
     ],
@@ -204,7 +208,26 @@ function genSub4() {
 }
 
 /* --- סדר פעולות חשבון --- */
-function genOrderOps() {
+
+/**
+ * המספרים ל-(a + b) × c לפי רמה:
+ * 0 - הסכום עד 10, כך שהכפל נשאר בלוח הכפל
+ * 1 - הסכום עד 20, כפול מספר קטן (2-5)
+ * 2 - כמו בדף המורה, למשל (13 + 13) × 6
+ */
+function parenSumNumbers(level) {
+  if (level === 0) {
+    const a = ri(2, 6);
+    return [a, ri(2, 10 - a), ri(2, 9)];
+  }
+  if (level === 1) {
+    const a = ri(3, 12);
+    return [a, ri(3, 20 - a), ri(2, 5)];
+  }
+  return [ri(3, 15), ri(3, 15), ri(2, 9)];
+}
+
+function genOrderOps(level = 2) {
   const form = ri(1, 5);
   let expr, plain, ans, first, steps, hint;
 
@@ -248,10 +271,8 @@ function genOrderOps() {
     steps = [`קודם כופלים: ${fmt(b)} × ${fmt(c)} = ${fmt(b * c)}.`, `ואז מחברים: ${fmt(a)} + ${fmt(b * c)} = ${fmt(ans)}.`];
   } else if (form === 4) {
     // (a + b) × c
-    const a = ri(3, 15);
-    const b = ri(3, 15);
-    const c = ri(2, 9);
-    expr = `(${fmt(a)} + ${fmt(b)}) × ${fmt(c)} = ?`;
+    const [a, b, c] = parenSumNumbers(level);
+    expr =`(${fmt(a)} + ${fmt(b)}) × ${fmt(c)} = ?`;
     plain = `(${a}+${b})*${c}`;
     ans = (a + b) * c;
     hint = 'הסוגריים חזקים יותר מהכפל - פותרים אותם ראשונים.';
@@ -671,7 +692,7 @@ function genNumberLineLocate() {
 
 /* ============================ סדר פעולות - ממשק הקשה ============================ */
 
-function orderOpsTokens() {
+function orderOpsTokens(level) {
   const form = ri(1, 5);
   if (form === 1) {
     const c = ri(2, 9); const q = ri(2, 9); const b = c * q; const a = ri(q + 5, 60);
@@ -685,14 +706,15 @@ function orderOpsTokens() {
     return [N(ri(5, 40)), O('+'), N(ri(2, 9)), O('×'), N(ri(2, 9))];
   }
   if (form === 4) {
-    return [L(), N(ri(3, 15)), O('+'), N(ri(3, 15)), R(), O('×'), N(ri(2, 9))];
+    const [a, b, c] = parenSumNumbers(level);
+    return [L(), N(a), O('+'), N(b), R(), O('×'), N(c)];
   }
   const b = ri(2, 9); const q1 = ri(2, 9); const d = ri(2, 9); const q2 = ri(2, 9);
   return [N(b * q1), O(':'), N(b), O('+'), N(d * q2), O(':'), N(d)];
 }
 
-function genOrderOpsTap() {
-  const tokens = orderOpsTokens();
+function genOrderOpsTap(level = 2) {
+  const tokens = orderOpsTokens(level);
   const sol = solve(tokens);
   return Q({
     type: 'order_ops_tap',
@@ -711,8 +733,9 @@ function genOrderOpsTap() {
 /* ============================ פילוג ============================ */
 
 /** הלוחם מפצל מספר לשני חלקים, ורואים גם מודל שטח */
-function genDistributeSplit() {
-  const a = ri(12, 48);
+function genDistributeSplit(level = 1) {
+  // מתחילים: חד-ספרתי × דו-ספרתי (7 × 14). בהמשך: דו-ספרתי × דו-ספרתי
+  const a = level === 0 ? ri(3, 9) : ri(12, 48);
   const b = pick([12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 26]);
   const tens = Math.floor(b / 10) * 10;
   const units = b % 10;
@@ -755,8 +778,8 @@ function genDistributeSplit() {
 }
 
 /** השלמת המספר החסר בפירוק, בנוסח דף התרגול */
-function genDistributeMissing() {
-  const a = pick([26, 28, 36, 42, 52, 63]);
+function genDistributeMissing(level = 1) {
+  const a = level === 0 ? ri(3, 9) : pick([26, 28, 36, 42, 52, 63]);
   const b = ri(12, 19);
   const part = ri(4, b - 2);
   const missing = b - part;
@@ -835,9 +858,18 @@ function explainOptions(correctText, wrongA, wrongB) {
 }
 
 /** נתון תרגיל פתור - פותרים תרגיל קרוב בלי לחשב מחדש, ומסבירים למה */
-function genInsight() {
-  const a = pick([15, 25, 35, 45, 24, 32]);
-  const b = pick([12, 14, 16, 18]);
+/**
+ * שלבים: 0 - חד-ספרתי × דו-ספרתי (6 × 14), 1 - עשרות עגולות (30 × 14),
+ * 2 - דו-ספרתיים מעורבים (45 × 18) כמו בדף המורה.
+ * b תמיד זוגי, כדי שאפשר יהיה לחצות אותו.
+ */
+function genInsight(level = 2) {
+  const a = pick([
+    [3, 4, 5, 6, 7, 8, 9],
+    [10, 20, 30, 40],
+    [15, 25, 35, 45, 24, 32],
+  ][Math.min(level, 2)]);
+  const b = pick(level === 1 ? [4, 6, 8, 12, 14, 16] : [12, 14, 16, 18]);
   const p = a * b;
   const mode = ri(1, 3);
 
@@ -1407,19 +1439,25 @@ function genChart() {
 
 /* ============================ רישום הגנרטורים ============================ */
 
+// כל גנרטור מקבל את רמת הנושא (0-2, ראו topicLevel) ומתאים לה את המספרים.
+// levelWeights: [מתחילים, ביניים, מתקדמים] - מכפיל משקל לכל רמה, כדי שסוגי שאלות
+// מסוימים יופיעו בעיקר בשלבים הראשונים (או רק מאוחר יותר).
+const EASY_FIRST = [3, 0.25, 0.25];
+const LATER = [0.35, 1, 1];
+
 export const GENERATORS = [
-  // level: 'easy' - שאלות למתחילים, מופיעות בעיקר כשהנושא עוד חדש (ראו topicLevel)
-  { type: 'mult_small', topic: 'mult_table', weight: 3, level: 'easy', gen: genMultSmall },
-  { type: 'mult_table', topic: 'mult_table', weight: 3, gen: genMultTable },
+  { type: 'mult_small', topic: 'mult_table', weight: 3, levelWeights: EASY_FIRST, gen: genMultSmall },
+  { type: 'mult_table', topic: 'mult_table', weight: 3, levelWeights: LATER, gen: genMultTable },
   { type: 'mult_round_tens', topic: 'mult_big', weight: 1.2, gen: genMultRoundTens },
   { type: 'mult_by_unit', topic: 'mult_big', weight: 1, gen: genMultByUnit },
   { type: 'add4', topic: 'add_sub', weight: 1.1, gen: genAdd4 },
   { type: 'sub4', topic: 'add_sub', weight: 1.1, gen: genSub4 },
-  { type: 'order_ops', topic: 'order_ops', weight: 0.9, gen: genOrderOps },
-  { type: 'order_ops_tap', topic: 'order_ops', weight: 1.2, gen: genOrderOpsTap },
-  { type: 'missing_easy_add', topic: 'missing', weight: 1.3, level: 'easy', gen: genMissingAddSub },
-  { type: 'missing_easy_mul', topic: 'missing', weight: 1.3, level: 'easy', gen: genMissingMulSmall },
-  { type: 'missing', topic: 'missing', weight: 1.3, gen: genMissing },
+  // בשלבים הראשונים - בעיקר שאלות הקשה על הפעולה הראשונה
+  { type: 'order_ops', topic: 'order_ops', weight: 0.9, levelWeights: [0.5, 1, 1], gen: genOrderOps },
+  { type: 'order_ops_tap', topic: 'order_ops', weight: 1.2, levelWeights: [3, 1.5, 1], gen: genOrderOpsTap },
+  { type: 'missing_easy_add', topic: 'missing', weight: 1.3, levelWeights: EASY_FIRST, gen: genMissingAddSub },
+  { type: 'missing_easy_mul', topic: 'missing', weight: 1.3, levelWeights: EASY_FIRST, gen: genMissingMulSmall },
+  { type: 'missing', topic: 'missing', weight: 1.3, levelWeights: LATER, gen: genMissing },
   { type: 'weight', topic: 'weight', weight: 1, gen: genWeight },
   { type: 'numberline_fill', topic: 'numberline', weight: 1.1, gen: genNumberLineFill },
   { type: 'numberline_locate', topic: 'numberline', weight: 0.8, gen: genNumberLineLocate },
@@ -1452,9 +1490,9 @@ export const GENERATORS = [
   { type: 'chart_read', topic: 'chart', weight: 1, gen: genChart },
 ];
 
-export function generateByType(type) {
+export function generateByType(type, level = 1) {
   const g = GENERATORS.find((x) => x.type === type);
-  return g ? g.gen() : pick(GENERATORS).gen();
+  return g ? g.gen(level) : pick(GENERATORS).gen(level);
 }
 
 /* ============================ שאלות המורה (קבועות) ============================ */
@@ -1490,13 +1528,13 @@ export const TEACHER_QUESTIONS = [
     steps: ['50 = 5 × 10.', '26 × 5 = 130.', '130 × 10 = 1,300.'],
   }),
   () => T({
-    type: 'teacher_add', topic: 'add_sub',
+    type: 'teacher_add', topic: 'add_sub', minLevel: 1,
     expr: '9,184 + 3,459 = ?', exprPlain: '9184+3459', answer: 12643,
     hint: 'יחידות: 4 + 9 = 13. כותבים 3 וממירים 1 לעשרות.',
     steps: ['4 + 9 = 13 - כותבים 3, ממירים 1.', '8 + 5 + 1 = 14 - כותבים 4, ממירים 1.', '1 + 4 + 1 = 6.', '9 + 3 = 12.', 'סך הכל 12,643.'],
   }),
   () => T({
-    type: 'teacher_sub', topic: 'add_sub',
+    type: 'teacher_sub', topic: 'add_sub', minLevel: 1,
     expr: '9,184 − 3,459 = ?', exprPlain: '9184-3459', answer: 5725,
     hint: '4 קטן מ-9, ולכן פורטים עשרת: 14 − 9 = 5.',
     steps: [
@@ -1520,25 +1558,25 @@ export const TEACHER_QUESTIONS = [
     steps: ['50 : 5 = 10.', '8 × 8 = 64.', '10 + 64 = 74.'],
   }),
   () => T({
-    type: 'teacher_missing_1', topic: 'missing',
+    type: 'teacher_missing_1', topic: 'missing', minLevel: 1,
     expr: '5 + ? × 5 = 45', exprPlain: '5+x*5=45', answer: 8,
     hint: 'קודם הכפל. 45 − 5 = 40, וכמה פעמים 5 זה 40?',
     steps: ['45 − 5 = 40.', '40 : 5 = 8.', 'בדיקה: 5 + 8 × 5 = 5 + 40 = 45.'],
   }),
   () => T({
-    type: 'teacher_missing_2', topic: 'missing',
+    type: 'teacher_missing_2', topic: 'missing', minLevel: 1,
     expr: '5 × (? + 5) = 45', exprPlain: '5*(x+5)=45', answer: 4,
     hint: '45 : 5 = 9, אז מה צריך לצאת בתוך הסוגריים?',
     steps: ['45 : 5 = 9.', '9 − 5 = 4.', 'בדיקה: 5 × (4 + 5) = 5 × 9 = 45.'],
   }),
   () => T({
-    type: 'teacher_missing_3', topic: 'missing',
+    type: 'teacher_missing_3', topic: 'missing', minLevel: 1,
     expr: '8 + ? × 8 = 64', exprPlain: '8+x*8=64', answer: 7,
     hint: '64 − 8 = 56, וכמה פעמים 8 זה 56?',
     steps: ['64 − 8 = 56.', '56 : 8 = 7.', 'בדיקה: 8 + 7 × 8 = 8 + 56 = 64.'],
   }),
   () => T({
-    type: 'teacher_missing_4', topic: 'missing',
+    type: 'teacher_missing_4', topic: 'missing', minLevel: 1,
     expr: '8 × (? + 8) = 64', exprPlain: '8*(x+8)=64', answer: 0,
     hint: '64 : 8 = 8. מה צריך להוסיף ל-8 כדי לקבל 8?',
     steps: ['64 : 8 = 8.', '8 − 8 = 0.', 'בדיקה: 8 × (0 + 8) = 8 × 8 = 64. התשובה היא אפס!'],
@@ -1608,35 +1646,35 @@ export const TEACHER_QUESTIONS = [
 
   // --- פילוג ---
   () => T({
-    type: 'teacher_dist_1', topic: 'distribute',
+    type: 'teacher_dist_1', topic: 'distribute', minLevel: 1,
     instruction: 'כתבו תרגיל מתאים לפירוק - השלימו את החסר:',
     expr: '52 × 5 = 50 × 5 + ? × 5', exprPlain: '52*5=50*5+x*5', answer: 2,
     hint: '52 פורק ל-50 ועוד משהו. כמה חסר ל-50 כדי להגיע ל-52?',
     steps: ['52 = 50 + 2.', 'ולכן 52 × 5 = 50 × 5 + 2 × 5.', 'בדיקה: 250 + 10 = 260.'],
   }),
   () => T({
-    type: 'teacher_dist_2', topic: 'distribute',
+    type: 'teacher_dist_2', topic: 'distribute', minLevel: 1,
     instruction: 'השלימו את המספר החסר:',
     expr: '52 × 16 = 52 × 6 + 52 × ?', exprPlain: '52*16=52*6+52*x', answer: 10,
     hint: 'שני החלקים ביחד צריכים להשלים 16.',
     steps: ['16 − 6 = 10.', 'בדיקה: 52 × 6 + 52 × 10 = 312 + 520 = 832 = 52 × 16.'],
   }),
   () => T({
-    type: 'teacher_dist_3', topic: 'distribute',
+    type: 'teacher_dist_3', topic: 'distribute', minLevel: 1,
     instruction: 'השלימו את המספר החסר:',
     expr: '52 × 16 = 52 × 9 + 52 × ?', exprPlain: '52*16=52*9+52*x', answer: 7,
     hint: 'כמה חסר ל-9 כדי להגיע ל-16?',
     steps: ['16 − 9 = 7.', 'בדיקה: 52 × 9 + 52 × 7 = 468 + 364 = 832.'],
   }),
   () => T({
-    type: 'teacher_dist_4', topic: 'distribute',
+    type: 'teacher_dist_4', topic: 'distribute', minLevel: 1,
     instruction: 'השלימו את המספר החסר:',
     expr: '36 × 18 = 36 × 10 + 36 × ?', exprPlain: '36*18=36*10+36*x', answer: 8,
     hint: 'כמה חסר ל-10 כדי להגיע ל-18?',
     steps: ['18 − 10 = 8.', 'בדיקה: 360 + 288 = 648 = 36 × 18.'],
   }),
   () => T({
-    type: 'teacher_dist_5', topic: 'distribute',
+    type: 'teacher_dist_5', topic: 'distribute', minLevel: 1,
     instruction: 'השלימו את המספר החסר:',
     expr: '36 × 18 = 36 × 11 + 36 × ?', exprPlain: '36*18=36*11+36*x', answer: 7,
     hint: 'כמה חסר ל-11 כדי להגיע ל-18?',
@@ -1673,7 +1711,7 @@ export const TEACHER_QUESTIONS = [
 
   // --- תובנה מספרית ---
   () => T({
-    type: 'teacher_insight_1', topic: 'insight', ui: 'explain',
+    type: 'teacher_insight_1', topic: 'insight', minLevel: 2, ui: 'explain',
     instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
     given: '45 × 18 = 810',
     stage1: { kind: 'numeric', prompt: '90 × 18 = ?' },
@@ -1688,7 +1726,7 @@ export const TEACHER_QUESTIONS = [
     steps: ['90 = 45 × 2.', 'גורם אחד גדל פי 2, ולכן המכפלה גדלה פי 2.', '810 × 2 = 1,620.'],
   }),
   () => T({
-    type: 'teacher_insight_2', topic: 'insight', ui: 'explain',
+    type: 'teacher_insight_2', topic: 'insight', minLevel: 2, ui: 'explain',
     instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
     given: '45 × 18 = 810',
     stage1: { kind: 'numeric', prompt: '45 × 9 = ?' },
@@ -1703,7 +1741,7 @@ export const TEACHER_QUESTIONS = [
     steps: ['9 = 18 : 2.', 'גורם אחד קטן פי 2, ולכן המכפלה קטנה פי 2.', '810 : 2 = 405.'],
   }),
   () => T({
-    type: 'teacher_insight_3', topic: 'insight', ui: 'explain',
+    type: 'teacher_insight_3', topic: 'insight', minLevel: 2, ui: 'explain',
     instruction: 'לפניכם תרגיל פתור. היעזרו בו:',
     given: '15 × 18 = 270',
     stage1: { kind: 'numeric', prompt: '15 × 18 × ? = 540' },
@@ -1885,17 +1923,23 @@ export const TEACHER_QUESTIONS = [
   }),
 ];
 
-export function randomTeacherQuestion(topic = null) {
-  const pool = topic
-    ? TEACHER_QUESTIONS.filter((f) => f().topic === topic)
-    : TEACHER_QUESTIONS;
+/**
+ * שאלה אקראית מדף המורה. שאלות עם minLevel מופיעות רק אחרי שהגיעו לרמה הזו בנושא,
+ * כי הן ברמת המבחן (למשל 9,184 + 3,459 כשהשלב הראשון מתרגל מאות).
+ */
+export function randomTeacherQuestion(topic = null, stats = null) {
+  const pool = TEACHER_QUESTIONS.filter((f) => {
+    const q = f();
+    if (topic && q.topic !== topic) return false;
+    return (q.minLevel || 0) <= topicLevel(stats, q.topic);
+  });
   return pool.length ? pick(pool)() : null;
 }
 
 /** יצירת שאלה לפי מזהה סוג - מהגנרטורים או משאלות המורה */
-export function makeByType(type) {
+export function makeByType(type, level = 1) {
   const g = GENERATORS.find((x) => x.type === type);
-  if (g) return g.gen();
+  if (g) return g.gen(level);
   for (const f of TEACHER_QUESTIONS) {
     const q = f();
     if (q.type === type) return q;
@@ -1914,31 +1958,26 @@ function topicWeight(stats, topicId) {
 }
 
 /**
- * רמת הנושא: 0 = מתחילים, 1 = רגיל.
- * עוברים לרגיל אחרי מספיק תרגול עם דיוק טוב, וחוזרים למתחילים אם הדיוק יורד.
+ * רמת הנושא: 0 = מתחילים, 1 = ביניים, 2 = מתקדמים (רמת דף המורה).
+ * עולים רמה אחרי מספיק תרגול עם דיוק טוב, ויורדים בחזרה אם הדיוק יורד.
  */
 export function topicLevel(stats, topicId) {
   const t = stats?.byTopic?.[topicId];
-  if (!t || t.answered < 10) return 0;
-  return t.firstTry / t.answered >= 0.75 ? 1 : 0;
+  if (!t || !t.answered) return 0;
+  const acc = t.firstTry / t.answered;
+  if (t.answered >= 25 && acc >= 0.8) return 2;
+  if (t.answered >= 10 && acc >= 0.75) return 1;
+  return 0;
 }
 
-function topicHasEasy(topicId) {
-  return GENERATORS.some((x) => x.topic === topicId && x.level === 'easy');
-}
-
-/** למתחילים - הרבה שאלות קלות ומעט רגילות. ברמה רגילה - קלות מדי פעם לחימום */
+/** מכפיל המשקל של הגנרטור ברמה הנוכחית של הנושא */
 function levelWeight(stats, g) {
-  const lvl = topicLevel(stats, g.topic);
-  if (g.level === 'easy') return lvl === 0 ? 3 : 0.25;
-  // לכל נושא שאין בו שאלות קלות - אין שינוי
-  return topicHasEasy(g.topic) && lvl === 0 ? 0.35 : 1;
+  return g.levelWeights ? g.levelWeights[topicLevel(stats, g.topic)] : 1;
 }
 
-/** האם השאלה מתאימה לרמה הנוכחית בנושא (ולכן מותר לחזור עליה באותו קרב) */
+/** האם זו שאלה מועדפת ברמה הנוכחית (ולכן מותר לחזור עליה באותו קרב) */
 function matchesLevel(stats, g) {
-  if (!topicHasEasy(g.topic)) return false;
-  return (g.level === 'easy') === (topicLevel(stats, g.topic) === 0);
+  return Boolean(g.levelWeights) && levelWeight(stats, g) >= 1;
 }
 
 /**
@@ -1963,7 +2002,7 @@ export function buildBattle(saveState, options = {}) {
   const queue = Array.isArray(saveState?.reviewQueue) ? saveState.reviewQueue : [];
   const relevant = shuffle(queue.filter((r) => !topic || r.topic === topic));
   for (const entry of relevant.slice(0, 2)) {
-    const q = makeByType(entry.type);
+    const q = makeByType(entry.type, topicLevel(stats, entry.topic));
     if (q) {
       q.fromReview = true;
       questions.push(q);
@@ -1971,11 +2010,9 @@ export function buildBattle(saveState, options = {}) {
     }
   }
 
-  // 2. שאלה מדף התרגול של המורה (באזור שיש בו שלב מתחילים - רק אחרי שעברו אותו)
-  const beginnerRegion = topic && topicLevel(stats, topic) === 0
-    && GENERATORS.some((g) => g.topic === topic && g.level === 'easy');
-  if (questions.length < count && !beginnerRegion) {
-    const tq = randomTeacherQuestion(topic);
+  // 2. שאלה מדף התרגול של המורה (רק כאלה שמתאימות לרמה הנוכחית)
+  if (questions.length < count) {
+    const tq = randomTeacherQuestion(topic, stats);
     if (tq && !usedTypes.has(tq.type)) {
       questions.push(tq);
       usedTypes.add(tq.type);
@@ -1990,10 +2027,10 @@ export function buildBattle(saveState, options = {}) {
       // שאלה שמתאימה לרמה מותר לחזור עליה, כדי שהגיוון לא ידחוף את הקרב לרמה הלא נכונה
       if (usedTypes.has(g.type) && !matchesLevel(stats, g) && attempt < 7) continue;
       usedTypes.add(g.type);
-      q = g.gen();
+      q = g.gen(topicLevel(stats, g.topic));
       break;
     }
-    if (!q) q = fallback[0].gen();
+    if (!q) q = fallback[0].gen(topicLevel(stats, fallback[0].topic));
     questions.push(q);
   }
 

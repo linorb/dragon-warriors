@@ -275,6 +275,7 @@ body {
 }
 
 .monster-zone { flex: 1; text-align: center; position: relative; }
+#screen-battle { overflow-x: clip; } /* שהפיצוץ לא ייצור גלילה לרוחב במסך צר */
 .monster-name { font-weight: 900; font-size: 20px; margin-bottom: 6px; }
 .monster-art svg { width: 100%; max-width: 210px; height: auto; }
 .monster-art { display: flex; justify-content: center; }
@@ -324,12 +325,85 @@ body {
   100% { transform: none; }
 }
 
-.monster-art.defeated { animation: defeat 1s ease forwards; }
+/* מפלצת מפוחדת רועדת קלות */
+.monster-art svg.mood-3 { animation: tremble .18s linear infinite; }
+@keyframes tremble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.5px); }
+  75% { transform: translateX(1.5px); }
+}
 
-@keyframes defeat {
-  0% { opacity: 1; transform: none; }
-  30% { transform: translateY(-10px) rotate(6deg); }
-  100% { opacity: 0; transform: translateY(40px) rotate(20deg) scale(.7); }
+/* ===== פיצוץ המפלצת ===== */
+.monster-art.exploding { animation: explode-body .7s ease-in forwards; }
+.monster-art.exploding svg { animation: none; }
+@keyframes explode-body {
+  0% { transform: none; filter: none; opacity: 1; }
+  35% { transform: scale(1.12) rotate(-4deg); filter: brightness(1.8) saturate(.6); opacity: 1; }
+  60% { transform: scale(1.25) rotate(3deg); filter: brightness(3); opacity: .7; }
+  100% { transform: scale(.2); filter: brightness(3); opacity: 0; }
+}
+
+.boom { position: absolute; left: 50%; width: 0; height: 0; pointer-events: none; z-index: 5; }
+.boom > * { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+
+.boom-flash {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe6 0%, #ffe08a 25%, #ff8a3d 50%, rgba(255, 90, 61, 0) 70%);
+  animation: boom-flash .9s ease-out forwards;
+}
+@keyframes boom-flash {
+  0% { transform: translate(-50%, -50%) scale(.1); opacity: 0; }
+  20% { opacity: 1; }
+  45% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+}
+
+.boom-ring {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 6px solid #fff3c4;
+  animation: boom-ring .8s ease-out .1s forwards;
+  opacity: 0;
+}
+@keyframes boom-ring {
+  0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+.boom-bit {
+  border-radius: 50%;
+  animation: boom-bit 1s cubic-bezier(.15, .7, .3, 1) .08s forwards;
+  opacity: 0;
+}
+@keyframes boom-bit {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity: 0; }
+}
+
+.boom-word {
+  font-size: 72px;
+  line-height: 1;
+  animation: boom-word 1.2s ease-out forwards;
+}
+@keyframes boom-word {
+  0% { transform: translate(-50%, -50%) scale(.2) rotate(-20deg); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.3) rotate(8deg); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; }
+  100% { transform: translate(-50%, -60%) scale(1.1); opacity: 0; }
+}
+
+.summary-art.victory-pop { animation: victory-pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes victory-pop {
+  0% { transform: scale(.2) rotate(-12deg); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monster-art svg.mood-3, .boom-bit, .boom-ring { animation: none; }
 }
 
 .chip-pop { animation: chip-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
@@ -424,6 +498,42 @@ body {
   direction: ltr;
   unicode-bidi: isolate;
 }
+
+/* טיוטת פילוג במכרות הכפל */
+.dist-pad {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, .2);
+  background: rgba(0, 0, 0, .22);
+}
+.pad-title { font-size: 15px; opacity: .85; margin-bottom: 8px; }
+.pad-rows { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.pad-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  transition: background .2s;
+}
+.pad-row.ok { background: rgba(77, 219, 139, .2); }
+.pad-row:nth-child(3) { border-top: 2px solid rgba(255, 255, 255, .15); padding-top: 9px; }
+.pad-in {
+  width: 74px;
+  height: 40px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, .18);
+  background: rgba(0, 0, 0, .3);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+.pad-in:focus { outline: none; border-color: var(--gold); }
+.pad-row.ok .pad-in { border-color: rgba(77, 219, 139, .7); }
+.pad-op { font-size: 20px; font-weight: 900; opacity: .8; }
 
 .q-feedback {
   margin-top: 12px;

@@ -154,15 +154,23 @@ function explodeMonster() {
   art.classList.add('exploding');
 }
 
-const EXPLODE_DELAY = 450;     // אחרי מכת הלוחם
-const TO_SUMMARY_DELAY = 2300; // זמן לראות את הפיצוץ לפני חלון הניצחון
+// כפתור הבדיקה נמצא בתחתית המסך - לכן קודם גוללים למפלצת, ממתינים שנייה שהעין תגיע,
+// ורק אז מפוצצים. הפיצוץ עצמו נמשך כשתי שניות (ראו boom-* ב-styles.css).
+const EXPLODE_DELAY = 1450;
+const TO_SUMMARY_DELAY = 4300; // זמן לראות את כל הפיצוץ לפני חלון הניצחון
 
 function onMonsterDefeated() {
   const current = battle;
+  $('#monster-art').scrollIntoView({ behavior: 'smooth', block: 'center' });
   setTimeout(() => { if (battle === current) explodeMonster(); }, EXPLODE_DELAY);
-  // בשאלה האחרונה עוברים לבד לחלון הניצחון (אם לא לחצו "המשך" קודם)
+  // בשאלה האחרונה עוברים לבד לחלון הניצחון, ו"המשך" נעול עד אז כדי שלא ידלגו על הפיצוץ
   if (battle.index === battle.questions.length - 1) {
-    setTimeout(() => { if (battle === current && !current.finished) onNext(); }, TO_SUMMARY_DELAY);
+    battle.awaitingExplosion = true;
+    setTimeout(() => {
+      if (battle !== current || current.finished) return;
+      current.awaitingExplosion = false;
+      onNext();
+    }, TO_SUMMARY_DELAY);
   }
 }
 
@@ -256,6 +264,7 @@ function endOfQuestion() {
   renderPips();
   $('#btn-submit').hidden = true;
   $('#btn-next').hidden = false;
+  $('#btn-next').disabled = Boolean(battle.awaitingExplosion);
   $('#btn-hint').disabled = true;
   $('#btn-next').focus();
 }
@@ -282,6 +291,7 @@ function onHint() {
 }
 
 function onNext() {
+  if (!battle || battle.awaitingExplosion) return;
   battle.index += 1;
   if (battle.index >= battle.questions.length) {
     finishBattle();

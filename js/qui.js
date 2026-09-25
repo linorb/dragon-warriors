@@ -702,21 +702,43 @@ function quizUI(q, ctx) {
 function chartUI(q, ctx) {
   let host = null;
 
+  // SVG עם ציר וקווי רשת, כך שגובה כל עמודה יחסי בדיוק לערך שלה.
+  // הציר בצד ימין והעמודה הראשונה מימין - כמו בקריאה בעברית.
+  const COLORS = ['#59a9ff', '#b57bff', '#ffcc4d', '#4ddb8b', '#ff9d5c'];
+  const W = 360, H = 240, TOP = 18, BOTTOM = 200, LEFT = 10, RIGHT = 318;
+
   function draw() {
     const { labels, values, unit } = q.chart;
-    const max = Math.max(...values);
+    const axisMax = Math.max(10, Math.ceil(Math.max(...values) / 10) * 10);
+    const step = axisMax <= 60 ? 5 : axisMax <= 120 ? 10 : Math.ceil(axisMax / 100) * 10;
+    const y = (v) => BOTTOM - (v / axisMax) * (BOTTOM - TOP);
+
+    let grid = '';
+    for (let v = 0; v <= axisMax; v += step) {
+      const major = v % (step * 2) === 0;
+      grid += `<line class="ch-grid ${major ? 'major' : ''}" x1="${LEFT}" x2="${RIGHT}" y1="${y(v)}" y2="${y(v)}"/>`;
+      if (major) grid += `<text class="ch-tick" x="${RIGHT + 8}" y="${y(v) + 5}">${fmt(v)}</text>`;
+    }
+
+    const n = values.length;
+    const slot = (RIGHT - LEFT) / n;
+    const bw = Math.min(56, slot * 0.62);
     const bars = values.map((v, i) => {
-      const h = Math.round((v / max) * 100);
-      return `<div class="bar-col">
-          <div class="bar-val num">${fmt(v)}</div>
-          <div class="bar" style="height:${h}%"></div>
-          <div class="bar-label">${esc(labels[i])}</div>
-        </div>`;
+      const cx = RIGHT - slot * (i + 0.5);
+      return `
+        <rect x="${cx - bw / 2}" y="${y(v)}" width="${bw}" height="${BOTTOM - y(v)}" rx="5" fill="${COLORS[i % COLORS.length]}"/>
+        <text class="ch-val" x="${cx}" y="${y(v) - 6}">${fmt(v)}</text>
+        <text class="ch-label" x="${cx}" y="${BOTTOM + 22}">${esc(labels[i])}</text>`;
     }).join('');
 
     host.innerHTML = `${instructionLine(q)}
       <div class="chart-unit">${esc(unit)}</div>
-      <div class="bar-chart">${bars}</div>`;
+      <svg class="bar-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`דיאגרמת עמודות: ${unit}`)}">
+        ${grid}
+        <line class="ch-axis" x1="${RIGHT}" x2="${RIGHT}" y1="${TOP - 6}" y2="${BOTTOM}"/>
+        <line class="ch-axis" x1="${LEFT}" x2="${RIGHT}" y1="${BOTTOM}" y2="${BOTTOM}"/>
+        ${bars}
+      </svg>`;
   }
 
   return {

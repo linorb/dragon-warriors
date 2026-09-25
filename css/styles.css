@@ -334,7 +334,7 @@ body {
 }
 
 /* ===== פיצוץ המפלצת ===== */
-.monster-art.exploding { animation: explode-body .7s ease-in forwards; }
+.monster-art.exploding { animation: explode-body 1.2s ease-in forwards; }
 .monster-art.exploding svg { animation: none; }
 @keyframes explode-body {
   0% { transform: none; filter: none; opacity: 1; }
@@ -351,7 +351,7 @@ body {
   height: 220px;
   border-radius: 50%;
   background: radial-gradient(circle, #fffbe6 0%, #ffe08a 25%, #ff8a3d 50%, rgba(255, 90, 61, 0) 70%);
-  animation: boom-flash .9s ease-out forwards;
+  animation: boom-flash 1.4s ease-out forwards;
 }
 @keyframes boom-flash {
   0% { transform: translate(-50%, -50%) scale(.1); opacity: 0; }
@@ -365,7 +365,7 @@ body {
   height: 160px;
   border-radius: 50%;
   border: 6px solid #fff3c4;
-  animation: boom-ring .8s ease-out .1s forwards;
+  animation: boom-ring 1.3s ease-out .1s forwards;
   opacity: 0;
 }
 @keyframes boom-ring {
@@ -375,7 +375,7 @@ body {
 
 .boom-bit {
   border-radius: 50%;
-  animation: boom-bit 1s cubic-bezier(.15, .7, .3, 1) .08s forwards;
+  animation: boom-bit 1.5s cubic-bezier(.15, .7, .3, 1) .08s forwards;
   opacity: 0;
 }
 @keyframes boom-bit {
@@ -387,7 +387,7 @@ body {
 .boom-word {
   font-size: 72px;
   line-height: 1;
-  animation: boom-word 1.2s ease-out forwards;
+  animation: boom-word 1.7s ease-out forwards;
 }
 @keyframes boom-word {
   0% { transform: translate(-50%, -50%) scale(.2) rotate(-20deg); opacity: 0; }
@@ -645,6 +645,7 @@ body {
 .item-name { font-weight: 700; font-size: 16px; }
 
 .item-tier { font-size: 13px; color: var(--ink-dim); }
+.item-desc { font-size: 13px; color: var(--gold); font-weight: 700; }
 .tier-rare .item-tier { color: var(--blue); }
 .tier-epic .item-tier { color: var(--purple); }
 .tier-legend .item-tier { color: var(--gold); }
@@ -1218,30 +1219,14 @@ body {
 /* ===== דיאגרמה ===== */
 .chart-unit { color: var(--ink-dim); font-size: 15px; margin-bottom: 4px; }
 
-.bar-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 12px;
-  height: 200px;
-  padding: 10px 6px 0;
-  border-bottom: 3px solid rgba(255, 255, 255, .25);
-  margin-bottom: 8px;
-}
-
-.bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; max-width: 80px; }
-.bar-val { font-weight: 900; margin-bottom: 4px; }
-.bar {
-  width: 100%;
-  background: linear-gradient(180deg, #8fd8ff, #3f8ddb);
-  border-radius: 8px 8px 0 0;
-  min-height: 6px;
-  transition: height .5s ease;
-}
-.bar-col:nth-child(2) .bar { background: linear-gradient(180deg, #c79bff, #7b45d6); }
-.bar-col:nth-child(3) .bar { background: linear-gradient(180deg, #ffd977, var(--gold-deep)); }
-.bar-col:nth-child(4) .bar { background: linear-gradient(180deg, #8ff0b8, var(--green-deep)); }
-.bar-label { font-size: 14px; margin-top: 6px; text-align: center; }
+.bar-chart-svg { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto 8px; }
+.bar-chart-svg text { font-family: var(--font); fill: var(--ink); }
+.ch-grid { stroke: rgba(255, 255, 255, .08); stroke-width: 1; }
+.ch-grid.major { stroke: rgba(255, 255, 255, .2); }
+.ch-axis { stroke: rgba(255, 255, 255, .45); stroke-width: 2.5; }
+.ch-tick { font-size: 13px; text-anchor: start; direction: ltr; fill: var(--ink-dim) !important; }
+.ch-val { font-size: 15px; font-weight: 900; text-anchor: middle; }
+.ch-label { font-size: 15px; text-anchor: middle; }
 
 /* ===== רשת נקודות ===== */
 .geo-wrap { display: flex; justify-content: center; margin: 10px 0; }

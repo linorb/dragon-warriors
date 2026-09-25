@@ -268,6 +268,7 @@ export function renderShop(onChange) {
         <div class="item-art">${itemArt(item.slot, item.id, s.player.color)}</div>
         <div class="item-name">${esc(item.name)}</div>
         <div class="item-tier">${esc(tier.name)} · ${esc(SLOTS.find((x) => x.id === item.slot).name)}</div>
+        ${item.desc ? `<div class="item-desc">${esc(item.desc)}</div>` : ''}
         <div class="item-price">🪙 <span class="num">${fmt(item.price)}</span></div>
         ${action}
       </div>`;

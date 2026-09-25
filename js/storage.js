@@ -48,6 +48,7 @@ export function defaultSave() {
         aura: null,
         dragon_head: null,
         dragon_neck: null,
+        dragon_skin: null,
       },
     },
     stats: {

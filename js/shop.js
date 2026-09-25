@@ -19,6 +19,7 @@ export const SLOTS = [
   { id: 'aura', name: 'הילה' },
   { id: 'dragon_head', name: 'כובע לדרקון' },
   { id: 'dragon_neck', name: 'צווארון לדרקון' },
+  { id: 'dragon_skin', name: 'שיקוי לדרקון' },
 ];
 
 export const SLOT_NAMES = Object.fromEntries(SLOTS.map((s) => [s.id, s.name]));
@@ -31,6 +32,8 @@ export const CATALOG = [
   { id: 'h_wing', slot: 'helmet', name: 'קסדת הכנפיים', tier: 'rare', price: 150, minRank: 1 },
   { id: 'h_dragon', slot: 'helmet', name: 'קסדת הדרקון', tier: 'epic', price: 260, minRank: 2 },
   { id: 'h_crown', slot: 'helmet', name: 'כתר האגדה', tier: 'legend', price: 520, minRank: 3 },
+  { id: 'h_phoenix', slot: 'helmet', name: 'קסדת עוף החול', tier: 'legend', price: 600, minRank: 3 },
+  { id: 'h_star', slot: 'helmet', name: 'קסדת הכוכבים', tier: 'legend', price: 720, minRank: 4 },
 
   // --- שריונות ---
   { id: 'a_leather', slot: 'armor', name: 'שריון עור', tier: 'common', price: 45, minRank: 0 },
@@ -38,6 +41,8 @@ export const CATALOG = [
   { id: 'a_steel', slot: 'armor', name: 'שריון פלדה', tier: 'rare', price: 140, minRank: 1 },
   { id: 'a_scale', slot: 'armor', name: 'שריון קשקשים', tier: 'epic', price: 250, minRank: 2 },
   { id: 'a_gold', slot: 'armor', name: 'שריון הזהב', tier: 'legend', price: 480, minRank: 3 },
+  { id: 'a_crystal', slot: 'armor', name: 'שריון הקריסטל', tier: 'legend', price: 620, minRank: 3 },
+  { id: 'a_dragonlord', slot: 'armor', name: 'שריון אדון הדרקונים', tier: 'legend', price: 760, minRank: 4 },
 
   // --- נשקים ---
   { id: 'w_sword', slot: 'weapon', name: 'חרב ברונזה', tier: 'common', price: 50, minRank: 0 },
@@ -47,6 +52,8 @@ export const CATALOG = [
   { id: 'w_ice', slot: 'weapon', name: 'חרב הקרח', tier: 'epic', price: 240, minRank: 2 },
   { id: 'w_flame', slot: 'weapon', name: 'חרב הלהבה', tier: 'epic', price: 260, minRank: 2 },
   { id: 'w_legend', slot: 'weapon', name: 'להב האגדה', tier: 'legend', price: 560, minRank: 3 },
+  { id: 'w_trident', slot: 'weapon', name: 'קלשון הים', tier: 'legend', price: 620, minRank: 3 },
+  { id: 'w_star', slot: 'weapon', name: 'חרב הכוכבים', tier: 'legend', price: 780, minRank: 4 },
 
   // --- מגנים ---
   { id: 's_wood', slot: 'shield', name: 'מגן עץ', tier: 'common', price: 40, minRank: 0 },
@@ -54,6 +61,8 @@ export const CATALOG = [
   { id: 's_steel', slot: 'shield', name: 'מגן פלדה', tier: 'rare', price: 150, minRank: 1 },
   { id: 's_dragon', slot: 'shield', name: 'מגן הדרקון', tier: 'epic', price: 230, minRank: 2 },
   { id: 's_star', slot: 'shield', name: 'מגן הכוכב', tier: 'legend', price: 500, minRank: 3 },
+  { id: 's_phoenix', slot: 'shield', name: 'מגן עוף החול', tier: 'legend', price: 600, minRank: 3 },
+  { id: 's_crystal', slot: 'shield', name: 'מגן הקריסטל', tier: 'legend', price: 740, minRank: 4 },
 
   // --- גלימות ---
   { id: 'c_grey', slot: 'cape', name: 'גלימה אפורה', tier: 'common', price: 35, minRank: 0 },
@@ -61,12 +70,16 @@ export const CATALOG = [
   { id: 'c_night', slot: 'cape', name: 'גלימת הלילה', tier: 'rare', price: 130, minRank: 1 },
   { id: 'c_flame', slot: 'cape', name: 'גלימת האש', tier: 'epic', price: 240, minRank: 2 },
   { id: 'c_royal', slot: 'cape', name: 'גלימת המלכות', tier: 'legend', price: 540, minRank: 3 },
+  { id: 'c_star', slot: 'cape', name: 'גלימת הכוכבים', tier: 'legend', price: 600, minRank: 3 },
+  { id: 'c_phoenix', slot: 'cape', name: 'גלימת עוף החול', tier: 'legend', price: 760, minRank: 4 },
 
   // --- הילות ---
   { id: 'au_leaf', slot: 'aura', name: 'הילת הטבע', tier: 'rare', price: 180, minRank: 1 },
   { id: 'au_ice', slot: 'aura', name: 'הילת הקרח', tier: 'epic', price: 300, minRank: 2 },
   { id: 'au_fire', slot: 'aura', name: 'הילת האש', tier: 'epic', price: 320, minRank: 2 },
+  { id: 'au_rainbow', slot: 'aura', name: 'הילת הקשת', tier: 'legend', price: 640, minRank: 3 },
   { id: 'au_storm', slot: 'aura', name: 'הילת הסופה', tier: 'legend', price: 620, minRank: 4 },
+  { id: 'au_star', slot: 'aura', name: 'הילת הכוכבים', tier: 'legend', price: 800, minRank: 4 },
 
   // --- לדרקון: כובעים ---
   { id: 'dh_bow', slot: 'dragon_head', name: 'פפיון ורוד', tier: 'common', price: 30, minRank: 0 },
@@ -79,6 +92,14 @@ export const CATALOG = [
   { id: 'dn_bell', slot: 'dragon_neck', name: 'קולר עם פעמון', tier: 'common', price: 60, minRank: 0 },
   { id: 'dn_medal', slot: 'dragon_neck', name: 'מדליית אלוף', tier: 'rare', price: 150, minRank: 1 },
   { id: 'dn_gem', slot: 'dragon_neck', name: 'שרשרת אבן הדרקון', tier: 'epic', price: 280, minRank: 2 },
+
+  // --- שיקויים לדרקון: משנים את צבע העור והמרקם, ונותנים לו "כוח" (מדרגת אלוף) ---
+  { id: 'p_forest', slot: 'dragon_skin', name: 'שיקוי היער', tier: 'epic', price: 350, minRank: 3, desc: 'כוח: ריפוי הטבע 🍃' },
+  { id: 'p_ice', slot: 'dragon_skin', name: 'שיקוי הקרח', tier: 'epic', price: 380, minRank: 3, desc: 'כוח: נשימת כפור ❄️' },
+  { id: 'p_fire', slot: 'dragon_skin', name: 'שיקוי האש', tier: 'epic', price: 400, minRank: 3, desc: 'כוח: נשיפת אש 🔥' },
+  { id: 'p_storm', slot: 'dragon_skin', name: 'שיקוי הסערה', tier: 'legend', price: 450, minRank: 3, desc: 'כוח: זעם הברקים ⚡' },
+  { id: 'p_gold', slot: 'dragon_skin', name: 'שיקוי הזהב', tier: 'legend', price: 620, minRank: 4, desc: 'כוח: קשקשי זהב בלתי חדירים ✨' },
+  { id: 'p_shadow', slot: 'dragon_skin', name: 'שיקוי הצללים', tier: 'legend', price: 680, minRank: 4, desc: 'כוח: היעלמות בחושך 🌙' },
 ];
 
 export function itemById(id) {

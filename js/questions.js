@@ -109,9 +109,10 @@ function genMultSmall() {
 }
 
 /* --- כפל דו-ספרתי בעשרות עגולות: 32×60, 26×50 --- */
-function genMultRoundTens() {
-  const a = ri(12, 49);
-  const tens = pick([20, 30, 40, 50, 60, 70, 80, 90]);
+function genMultRoundTens(level = 1) {
+  // מתחילים: מספרים קטנים יותר ועשרות עד 50
+  const a = level === 0 ? ri(11, 25) : ri(12, 49);
+  const tens = pick(level === 0 ? [20, 30, 40, 50] : [20, 30, 40, 50, 60, 70, 80, 90]);
   const d = tens / 10;
   const ans = a * tens;
   return Q({
@@ -131,9 +132,9 @@ function genMultRoundTens() {
 }
 
 /* --- כפל דו-ספרתי בחד-ספרתי: 56×6 --- */
-function genMultByUnit() {
-  const a = ri(13, 98);
-  const b = ri(3, 9);
+function genMultByUnit(level = 1) {
+  const a = level === 0 ? ri(12, 39) : ri(13, 98);
+  const b = level === 0 ? ri(2, 5) : ri(3, 9);
   const ans = a * b;
   const tensPart = Math.floor(a / 10) * 10;
   const unitsPart = a % 10;
@@ -456,7 +457,114 @@ function genMissingMulSmall() {
   });
 }
 
-/* --- יחידות משקל --- */
+/* --- יחידות משקל למתחילים: חיבור באותה יחידה, בלי המרה --- */
+function genWeightAdd() {
+  const form = ri(1, 3);
+
+  if (form === 1) {
+    const a = ri(1, 9);
+    const b = ri(1, 9);
+    return Q({
+      type: 'weight_add',
+      topic: 'weight',
+      instruction: 'כמה שוקלים ביחד?',
+      expr: `${fmt(a)} ק"ג + ${fmt(b)} ק"ג = ? ק"ג`,
+      exprPlain: `${a}+${b}`,
+      exprRtl: true,
+      answer: a + b,
+      unit: 'ק"ג',
+      hint: 'שתי הכמויות באותה יחידה (ק"ג), אז פשוט מחברים את המספרים.',
+      steps: [`${fmt(a)} + ${fmt(b)} = ${fmt(a + b)}.`, `ביחד: ${fmt(a + b)} ק"ג.`],
+    });
+  }
+
+  if (form === 2) {
+    // גרמים בלבד, והסכום נשאר מתחת ל-1,000 - כך שאין צורך להמיר לק"ג
+    const a = ri(2, 9) * 50;
+    const b = ri(1, (950 - a) / 50) * 50;
+    return Q({
+      type: 'weight_add',
+      topic: 'weight',
+      instruction: 'כמה שוקלים ביחד?',
+      expr: `${fmt(a)} גרם + ${fmt(b)} גרם = ? גרם`,
+      exprPlain: `${a}+${b}`,
+      exprRtl: true,
+      answer: a + b,
+      unit: 'גרם',
+      hint: `שתי הכמויות בגרמים. אפשר לחבר קודם את המאות ואחר כך את העשרות.`,
+      steps: [`${fmt(a)} + ${fmt(b)} = ${fmt(a + b)}.`, `ביחד: ${fmt(a + b)} גרם.`],
+    });
+  }
+
+  // שלוש משקולות על כף המאזניים
+  const ws = [ri(1, 5), ri(1, 5), ri(1, 5)];
+  const sum = ws[0] + ws[1] + ws[2];
+  return Q({
+    type: 'weight_add',
+    topic: 'weight',
+    instruction: 'על כף המאזניים יש שלוש משקולות. כמה הן שוקלות ביחד?',
+    expr: `${ws.map((w) => `${fmt(w)} ק"ג`).join(' + ')} = ? ק"ג`,
+    exprPlain: ws.join('+'),
+    exprRtl: true,
+    answer: sum,
+    unit: 'ק"ג',
+    hint: 'מחברים את שלוש המשקולות, אחת אחרי השנייה.',
+    steps: [`${fmt(ws[0])} + ${fmt(ws[1])} = ${fmt(ws[0] + ws[1])}.`, `${fmt(ws[0] + ws[1])} + ${fmt(ws[2])} = ${fmt(sum)} ק"ג.`],
+  });
+}
+
+/* --- יחידות משקל, שלב ביניים: המרות פשוטות בין ק"ג לגרם --- */
+function genWeightConvert() {
+  const form = ri(1, 3);
+  const kg = ri(1, 9);
+
+  if (form === 1) {
+    return Q({
+      type: 'weight_convert',
+      topic: 'weight',
+      instruction: 'המירו ליחידות גרם:',
+      expr: `${fmt(kg)} ק"ג = ? גרם`,
+      exprPlain: `${kg}*1000`,
+      exprRtl: true,
+      answer: kg * 1000,
+      unit: 'גרם',
+      hint: 'כל קילוגרם אחד הוא 1,000 גרם.',
+      steps: ['1 ק"ג = 1,000 גרם.', `${fmt(kg)} × 1,000 = ${fmt(kg * 1000)} גרם.`],
+    });
+  }
+
+  if (form === 2) {
+    const g = ri(1, 9) * 100;
+    const ans = kg * 1000 + g;
+    return Q({
+      type: 'weight_convert',
+      topic: 'weight',
+      instruction: 'המירו ליחידות גרם:',
+      expr: `${fmt(kg)} ק"ג ו-${fmt(g)} גרם = ? גרם`,
+      exprPlain: `${kg}*1000+${g}`,
+      exprRtl: true,
+      answer: ans,
+      unit: 'גרם',
+      hint: `קודם ממירים את הקילוגרמים: ${fmt(kg)} ק"ג = ${fmt(kg * 1000)} גרם. אחר כך מוסיפים את הגרמים.`,
+      steps: [`${fmt(kg)} ק"ג = ${fmt(kg * 1000)} גרם.`, `${fmt(kg * 1000)} + ${fmt(g)} = ${fmt(ans)} גרם.`],
+    });
+  }
+
+  return Q({
+    type: 'weight_convert',
+    topic: 'weight',
+    instruction: 'המירו לקילוגרמים:',
+    expr: `${fmt(kg * 1000)} גרם = ? ק"ג`,
+    exprPlain: `${kg * 1000}/1000`,
+    exprRtl: true,
+    answer: kg,
+    unit: 'ק"ג',
+    hint: 'בכל 1,000 גרם יש קילוגרם אחד. כמה פעמים 1,000 נכנס כאן?',
+    steps: ['1,000 גרם = 1 ק"ג.', `${fmt(kg * 1000)} : 1,000 = ${fmt(kg)} ק"ג.`],
+  });
+}
+
+/* --- יחידות משקל, שלב מתקדם: המרה עם גרמים לא עגולים (כמו בדף המורה) --- */
 function genWeight() {
   const form = ri(1, 3);
   const kg = ri(1, 4);
@@ -534,17 +642,29 @@ function person() {
   };
 }
 
-function genWordDiff() {
-  const base = ri(80, 140) * 10000;
-  const diff = ri(3, 19) * 5000;
-  const a = base;
-  const b = base + diff;
+/** סיפור הפרש מחירים לפי רמה: אופניים (מאות), מכונית (אלפים), דירה (כמו בדף המורה) */
+function genWordDiff(level = 2) {
+  let a, diff, story;
+  if (level === 0) {
+    a = ri(15, 45) * 10;
+    diff = ri(3, 30) * 10;
+    story = (x, y) => `אופניים משומשים עולים [[${fmt(x)}]] ש"ח. אופניים חדשים עולים [[${fmt(y)}]] ש"ח. מה ההפרש בין המחירים?`;
+  } else if (level === 1) {
+    a = ri(25, 80) * 1000;
+    diff = ri(2, 25) * 500;
+    story = (x, y) => `מכונית יד שנייה עולה [[${fmt(x)}]] ש"ח. מכונית חדשה מאותו דגם עולה [[${fmt(y)}]] ש"ח. מה ההפרש בין המחירים?`;
+  } else {
+    a = ri(80, 140) * 10000;
+    diff = ri(3, 19) * 5000;
+    story = (x, y) => `דירת 3 חדרים יד שנייה, ללא ממ"ד, עולה [[${fmt(x)}]] ש"ח. דירת 3 חדרים חדשה, עם ממ"ד, עולה [[${fmt(y)}]] ש"ח. מה ההפרש בין מחירי הדירות?`;
+  }
+  const b = a + diff;
   return Q({
     type: 'word_diff',
     topic: 'word',
     ui: 'mission',
     instruction: 'משימה:',
-    story: `דירת 3 חדרים יד שנייה, ללא ממ"ד, עולה [[${fmt(a)}]] ש"ח. דירת 3 חדרים חדשה, עם ממ"ד, עולה [[${fmt(b)}]] ש"ח. מה ההפרש בין מחירי הדירות?`,
+    story: story(a, b),
     answer: diff,
     unit: 'ש"ח',
     hint: 'הפרש = המחיר הגדול פחות המחיר הקטן. זו פעולת חיסור.',
@@ -552,17 +672,30 @@ function genWordDiff() {
   });
 }
 
-function genWordBudget() {
-  const budget = ri(40, 99) * 10000;
-  const spent = budget - ri(3, 25) * 3000;
-  const ans = budget - spent;
+/** סיפור תקציב לפי רמה: מסיבת כיתה (מאות), ספריית בית הספר (אלפים), מגרש עירוני (כמו בדף המורה) */
+function genWordBudget(level = 2) {
+  let budget, spent, story;
   const city = pick(CITIES);
+  if (level === 0) {
+    budget = ri(5, 9) * 100;
+    spent = budget - ri(3, 40) * 5;
+    story = `לכיתה הוקצבו [[${fmt(budget)}]] ש"ח למסיבת סוף השנה. בפועל, המסיבה עלתה [[${fmt(spent)}]] ש"ח. כמה כסף נותר מהסכום שהוקצב?`;
+  } else if (level === 1) {
+    budget = ri(10, 60) * 1000;
+    spent = budget - ri(2, 30) * 100;
+    story = `לספריית בית הספר הוקצבו [[${fmt(budget)}]] ש"ח לקניית ספרים חדשים. בפועל, הספרים עלו [[${fmt(spent)}]] ש"ח. כמה כסף נותר מהסכום שהוקצב?`;
+  } else {
+    budget = ri(40, 99) * 10000;
+    spent = budget - ri(3, 25) * 3000;
+    story = `בשכונה חדשה הקימו מגרש כדורגל לשימוש התושבים. לצורך הפרויקט הקציבה עיריית ${city} [[${fmt(budget)}]] ש"ח. בפועל, עלות ההקמה הסתכמה ב-[[${fmt(spent)}]] ש"ח. כמה כסף נותר מהסכום שהוקצב?`;
+  }
+  const ans = budget - spent;
   return Q({
     type: 'word_budget',
     topic: 'word',
     ui: 'mission',
     instruction: 'משימה:',
-    story: `בשכונה חדשה הקימו מגרש כדורגל לשימוש התושבים. לצורך הפרויקט הקציבה עיריית ${city} [[${fmt(budget)}]] ש"ח. בפועל, עלות ההקמה הסתכמה ב-[[${fmt(spent)}]] ש"ח. כמה כסף נותר מהסכום שהוקצב?`,
+    story,
     answer: ans,
     unit: 'ש"ח',
     hint: 'מה שנותר = הסכום שהוקצב פחות מה שבאמת הוצא.',
@@ -636,10 +769,13 @@ function genWordBuyRemain() {
 /* ============================ ישר המספרים ============================ */
 
 /** השלמת ערכים חסרים על ציר המספרים (אבני קפיצה) */
-function genNumberLineFill() {
-  const step = pick([10, 50, 100, 100, 1000, 25]);
+function genNumberLineFill(level = 2) {
+  // מתחילים: קפיצות קטנות במספרים עד כמה מאות. בהמשך: אלפים וקפיצות של 1,000
+  const step = pick([[10, 10, 100, 5], [10, 50, 100, 25], [10, 50, 100, 100, 1000, 25]][Math.min(level, 2)]);
   const count = ri(5, 6);
-  const start = step * ri(step >= 100 ? 12 : 4, step >= 100 ? 90 : 40);
+  const start = level === 0
+    ? step * ri(1, step === 100 ? 8 : 20)
+    : step * ri(step >= 100 ? 12 : 4, step >= 100 ? 90 : 40);
   const values = Array.from({ length: count }, (_, i) => start + i * step);
 
   // שתי אבנים חסרות, אף פעם לא הראשונה או האחרונה.
@@ -665,10 +801,10 @@ function genNumberLineFill() {
 }
 
 /** איתור מיקומו של מספר על הציר */
-function genNumberLineLocate() {
-  const step = pick([100, 100, 500, 1000, 50]);
+function genNumberLineLocate(level = 2) {
+  const step = pick([[10, 10, 100], [50, 100, 100], [100, 100, 500, 1000, 50]][Math.min(level, 2)]);
   const ticks = 7;
-  const start = step * ri(4, 40);
+  const start = level === 0 ? step * ri(0, 10) : step * ri(4, 40);
   const values = Array.from({ length: ticks }, (_, i) => start + i * step);
   const target = ri(1, ticks - 2);
 
@@ -809,9 +945,11 @@ const DIVISIBILITY_RULES = {
   6: 'מספר מתחלק ב-6 אם הוא מתחלק גם ב-2 (ספרת אחדות זוגית) וגם ב-3 (סכום הספרות מתחלק ב-3).',
 };
 
-function genDivisibility() {
+function genDivisibility(level = 2) {
+  // מתחילים: 2, 5, 10 (לפי ספרת האחדות). אחר כך 3, ובסוף גם 6
+  const divisors = [[2, 5, 5, 10], [2, 5, 10, 3, 3], [2, 5, 5, 6, 6, 10, 3]][Math.min(level, 2)];
   for (let attempt = 0; attempt < 40; attempt++) {
-    const divisor = pick([2, 5, 5, 6, 6, 10, 3]);
+    const divisor = pick(divisors);
     const digits = [ri(1, 9), ri(0, 9), ri(0, 9)];
     const pos = ri(0, 2);
     const valid = [];
@@ -1458,7 +1596,10 @@ export const GENERATORS = [
   { type: 'missing_easy_add', topic: 'missing', weight: 1.3, levelWeights: EASY_FIRST, gen: genMissingAddSub },
   { type: 'missing_easy_mul', topic: 'missing', weight: 1.3, levelWeights: EASY_FIRST, gen: genMissingMulSmall },
   { type: 'missing', topic: 'missing', weight: 1.3, levelWeights: LATER, gen: genMissing },
-  { type: 'weight', topic: 'weight', weight: 1, gen: genWeight },
+  // משקל: מתחילים - רק חיבור באותה יחידה. המרות רק מהשלב השני, והקשות בשלב המתקדם
+  { type: 'weight_add', topic: 'weight', weight: 1, levelWeights: [3, 0.3, 0.15], gen: genWeightAdd },
+  { type: 'weight_convert', topic: 'weight', weight: 1, levelWeights: [0, 3, 0.8], gen: genWeightConvert },
+  { type: 'weight', topic: 'weight', weight: 1, levelWeights: [0, 0.4, 1.5], gen: genWeight },
   { type: 'numberline_fill', topic: 'numberline', weight: 1.1, gen: genNumberLineFill },
   { type: 'numberline_locate', topic: 'numberline', weight: 0.8, gen: genNumberLineLocate },
   { type: 'distribute_split', topic: 'distribute', weight: 1.1, gen: genDistributeSplit },
@@ -1472,11 +1613,12 @@ export const GENERATORS = [
   { type: 'word_buy_remain', topic: 'word', weight: 0.4, gen: genWordBuyRemain },
   { type: 'word_shirts', topic: 'word', weight: 0.5, gen: genShirts },
 
-  { type: 'frac_color', topic: 'fractions', weight: 1, gen: genFracColor },
-  { type: 'frac_name', topic: 'fractions', weight: 1, gen: genFracName },
-  { type: 'frac_improper', topic: 'fractions', weight: 1, gen: genFracImproper },
-  { type: 'frac_sort', topic: 'fractions', weight: 0.9, gen: genFracSort },
-  { type: 'frac_add', topic: 'fractions', weight: 1.1, gen: genFracAdd },
+  // שברים: מתחילים בזיהוי וצביעה, שברים גדולים משלם ומיון - בעיקר בהמשך
+  { type: 'frac_color', topic: 'fractions', weight: 1, levelWeights: [2, 1, 1], gen: genFracColor },
+  { type: 'frac_name', topic: 'fractions', weight: 1, levelWeights: [2, 1, 1], gen: genFracName },
+  { type: 'frac_improper', topic: 'fractions', weight: 1, levelWeights: [0.2, 1, 1], gen: genFracImproper },
+  { type: 'frac_sort', topic: 'fractions', weight: 0.9, levelWeights: [0.3, 1, 1], gen: genFracSort },
+  { type: 'frac_add', topic: 'fractions', weight: 1.1, levelWeights: [0.5, 1, 1], gen: genFracAdd },
 
   { type: 'geo_triangle', topic: 'geometry', weight: 1.1, gen: genGeoTriangle },
   { type: 'geo_equilateral', topic: 'geometry', weight: 0.5, gen: genGeoEquilateral },
@@ -1504,7 +1646,7 @@ function T(o) {
 
 export const TEACHER_QUESTIONS = [
   () => T({
-    type: 'teacher_mult_1', topic: 'mult_big',
+    type: 'teacher_mult_1', topic: 'mult_big', minLevel: 1,
     expr: '45 × 50 = ?', exprPlain: '45*50', answer: 2250,
     hint: '50 זה 5 × 10. כפלו ב-5 ואז הוסיפו אפס.',
     steps: ['45 × 5 = 225.', '225 × 10 = 2,250.'],
@@ -1516,7 +1658,7 @@ export const TEACHER_QUESTIONS = [
     steps: ['50 × 6 = 300.', '6 × 6 = 36.', '300 + 36 = 336.'],
   }),
   () => T({
-    type: 'teacher_mult_3', topic: 'mult_big',
+    type: 'teacher_mult_3', topic: 'mult_big', minLevel: 1,
     expr: '32 × 60 = ?', exprPlain: '32*60', answer: 1920,
     hint: '32 × 6 = 192, ועכשיו מוסיפים אפס.',
     steps: ['60 = 6 × 10.', '32 × 6 = 192.', '192 × 10 = 1,920.'],
@@ -1582,38 +1724,38 @@ export const TEACHER_QUESTIONS = [
     steps: ['64 : 8 = 8.', '8 − 8 = 0.', 'בדיקה: 8 × (0 + 8) = 8 × 8 = 64. התשובה היא אפס!'],
   }),
   () => T({
-    type: 'teacher_weight_1', topic: 'weight',
+    type: 'teacher_weight_1', topic: 'weight', minLevel: 1,
     expr: '1 ק"ג ו-96 גרם = ? גרם', exprPlain: '1*1000+96', answer: 1096, exprRtl: true, unit: 'גרם',
     hint: '1 ק"ג = 1,000 גרם.',
     steps: ['1 ק"ג = 1,000 גרם.', '1,000 + 96 = 1,096 גרם.'],
   }),
   () => T({
-    type: 'teacher_weight_2', topic: 'weight',
+    type: 'teacher_weight_2', topic: 'weight', minLevel: 1,
     expr: '2 ק"ג ו-112 גרם = ? גרם', exprPlain: '2*1000+112', answer: 2112, exprRtl: true, unit: 'גרם',
     hint: '2 ק"ג = 2,000 גרם.',
     steps: ['2 ק"ג = 2,000 גרם.', '2,000 + 112 = 2,112 גרם.'],
   }),
   () => T({
-    type: 'teacher_weight_3', topic: 'weight',
+    type: 'teacher_weight_3', topic: 'weight', minLevel: 2,
     expr: '1 ק"ג ו-34 גרם = ? גרם + 38 גרם', exprPlain: '1*1000+34-38', answer: 996, exprRtl: true, unit: 'גרם',
     hint: '1 ק"ג ו-34 גרם = 1,034 גרם. כמה חסר ל-38 כדי להגיע ל-1,034?',
     steps: ['1 ק"ג ו-34 גרם = 1,034 גרם.', '1,034 − 38 = 996.', 'בדיקה: 996 + 38 = 1,034.'],
   }),
   () => T({
-    type: 'teacher_weight_4', topic: 'weight',
+    type: 'teacher_weight_4', topic: 'weight', minLevel: 2,
     expr: '1 ק"ג ו-104 גרם = ? גרם + 114 גרם', exprPlain: '1*1000+104-114', answer: 990, exprRtl: true, unit: 'גרם',
     hint: '1 ק"ג ו-104 גרם = 1,104 גרם.',
     steps: ['1 ק"ג ו-104 גרם = 1,104 גרם.', '1,104 − 114 = 990.', 'בדיקה: 990 + 114 = 1,104.'],
   }),
   () => T({
-    type: 'teacher_word_1', topic: 'word', ui: 'mission',
+    type: 'teacher_word_1', topic: 'word', ui: 'mission', minLevel: 2,
     story: 'דירת 3 חדרים יד שנייה, ללא ממ"ד, עולה [[1,150,000]] ש"ח. דירת 3 חדרים חדשה, עם ממ"ד, עולה [[1,275,000]] ש"ח. מה ההפרש בין מחירי הדירות?',
     answer: 125000, unit: 'ש"ח',
     hint: 'הפרש = חיסור בין שני המחירים.',
     steps: ['1,275,000 − 1,150,000 = 125,000.', 'ההפרש הוא 125,000 ש"ח.'],
   }),
   () => T({
-    type: 'teacher_word_2', topic: 'word', ui: 'mission',
+    type: 'teacher_word_2', topic: 'word', ui: 'mission', minLevel: 2,
     story: 'בשכונת נווה הדרים הקימו מגרש כדורגל חדש לשימוש תושבי השכונה. לצורך הפרויקט הקציבה עיריית אשקלון [[876,000]] ש"ח. בפועל, עלות הקמת המגרש הסתכמה ב-[[795,000]] ש"ח. כמה כסף נותר מהסכום שהוקצב?',
     answer: 81000, unit: 'ש"ח',
     hint: 'מה שנותר = הסכום שהוקצב פחות מה שהוצא בפועל.',
@@ -1621,7 +1763,7 @@ export const TEACHER_QUESTIONS = [
   }),
   // --- ישר המספרים ---
   () => T({
-    type: 'teacher_numberline_1', topic: 'numberline', ui: 'numberline_fill',
+    type: 'teacher_numberline_1', topic: 'numberline', ui: 'numberline_fill', minLevel: 1,
     instruction: 'השלימו את ציר המספרים במקומות החסרים:',
     stones: [
       { value: 3900, blank: false }, { value: 4000, blank: true },
@@ -1632,7 +1774,7 @@ export const TEACHER_QUESTIONS = [
     steps: ['כל קפיצה היא 100.', '3,900 + 100 = 4,000.', '4,000 + 100 = 4,100.'],
   }),
   () => T({
-    type: 'teacher_numberline_2', topic: 'numberline', ui: 'numberline_fill',
+    type: 'teacher_numberline_2', topic: 'numberline', ui: 'numberline_fill', minLevel: 1,
     instruction: 'השלימו את ציר המספרים במקומות החסרים:',
     stones: [
       { value: 5600, blank: false }, { value: 5700, blank: false },
@@ -1695,7 +1837,7 @@ export const TEACHER_QUESTIONS = [
     ],
   }),
   () => T({
-    type: 'teacher_div_2', topic: 'divisibility', ui: 'divisibility',
+    type: 'teacher_div_2', topic: 'divisibility', ui: 'divisibility', minLevel: 2,
     instruction: 'סמנו כל ספרה שמתאימה, כך שהמספר יתחלק ב-6:',
     digitsShown: [3, null, 2], divisor: 6, validDigits: [1, 4, 7],
     expr: '3?2', answer: 1,
@@ -1769,7 +1911,7 @@ export const TEACHER_QUESTIONS = [
     steps: ['העיגול חולק ל-4 חלקים שווים, ולכן המכנה הוא 4.', 'צבועים 3 חלקים, ולכן המונה הוא 3.', 'השבר הוא 3/4.'],
   }),
   () => T({
-    type: 'teacher_frac_2', topic: 'fractions', ui: 'frac_sort',
+    type: 'teacher_frac_2', topic: 'fractions', ui: 'frac_sort', minLevel: 1,
     instruction: 'הקיפו את השברים הגדולים מ-1 וקטנים מ-2 - מיינו אותם לתיבה הנכונה:',
     cards: shuffle([
       { num: 3, den: 2, bin: 0 }, { num: 5, den: 4, bin: 0 }, { num: 4, den: 3, bin: 0 },

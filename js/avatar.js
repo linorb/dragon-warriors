@@ -23,6 +23,12 @@ export function shade(hex, amt) {
   return rgb2hex(f(r), f(g), f(b));
 }
 
+/** נצנוץ בן 4 קצוות, במרכז (x,y) ובגודל r (הקצוות במרחק 2r) */
+function starPath(x, y, r, fill) {
+  const d = r * 2;
+  return `<path d="M${x} ${y - d}Q${x} ${y} ${x + d} ${y}Q${x} ${y} ${x} ${y + d}Q${x} ${y} ${x - d} ${y}Q${x} ${y} ${x} ${y - d}z" fill="${fill}"/>`;
+}
+
 export const COLOR_CHOICES = [
   { id: '#59a9ff', name: 'כחול' },
   { id: '#4ddb8b', name: 'ירוק' },
@@ -90,6 +96,30 @@ const HELMETS = {
       <circle cx="112" cy="54" r="6" fill="#59a9ff"/>
       <circle cx="140" cy="62" r="5" fill="#4ddb8b"/>
     </g>`,
+  h_phoenix: () => `
+    <g class="layer-helmet">
+      <path d="M112 50c-4-14 2-26 12-34-2 10 2 14 8 16-8 4-10 10-8 18z" fill="#ffcc4d"/>
+      <path d="M110 50c-8-9-17-11-25-8 7 3 9 8 7 14z" fill="#ff8a3d"/>
+      <path d="M112 48c-25 0-43 15-43 33v4h86v-4c0-18-18-33-43-33z" fill="#c8331b"/>
+      <path d="M112 48c-25 0-43 15-43 33v4h13v-4c0-16 13-28 30-29z" fill="#ff6a3d"/>
+      <path d="M69 83v14c0 7 5 11 11 11h5V83z" fill="#8c2410"/>
+      <path d="M155 83v14c0 7-5 11-11 11h-5V83z" fill="#8c2410"/>
+      <rect x="65" y="75" width="94" height="10" rx="5" fill="#ffcc4d"/>
+      <path d="M112 56l6 8-6 9-6-9z" fill="#fff3c4"/>
+    </g>`,
+  h_star: () => `
+    <g class="layer-helmet">
+      <path d="M112 48c-25 0-43 15-43 33v4h86v-4c0-18-18-33-43-33z" fill="#1f2a6b"/>
+      <path d="M112 48c-25 0-43 15-43 33v4h13v-4c0-16 13-28 30-29z" fill="#3848a8"/>
+      <path d="M69 83v14c0 7 5 11 11 11h5V83z" fill="#151d4d"/>
+      <path d="M155 83v14c0 7-5 11-11 11h-5V83z" fill="#151d4d"/>
+      <rect x="65" y="75" width="94" height="10" rx="5" fill="#ffcc4d"/>
+      <path d="M112 22l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z" fill="#ffe08a"/>
+      <circle cx="92" cy="62" r="2" fill="#fff"/>
+      <circle cx="134" cy="58" r="2.4" fill="#fff"/>
+      <circle cx="120" cy="68" r="1.6" fill="#fff"/>
+      <circle cx="100" cy="72" r="1.4" fill="#ffe08a"/>
+    </g>`,
 };
 
 // כל השריונות בנויים על אותו קו מתאר, שעוטף בדיוק את הטוניקה של הגוף (baseBody)
@@ -137,6 +167,29 @@ const ARMORS = {
       <path d="${ARMOR_SKIRT}" fill="#b8820c"/>
       <path d="M112 140l14 12-6 18h-16l-6-18z" fill="#fff3c4"/>
       <circle cx="112" cy="158" r="5" fill="#ff6b6b"/>
+    </g>`,
+  a_crystal: () => `
+    <g class="layer-armor">
+      <path d="${ARMOR_TORSO}" fill="#5ab8e0"/>
+      <path d="${ARMOR_TORSO_LIGHT}" fill="#bdeeff"/>
+      <path d="${ARMOR_SKIRT}" fill="#3d8fb8"/>
+      <path d="M112 138l16 14-6 22h-20l-6-22z" fill="#e8fbff"/>
+      <path d="M112 138v36M96 152h32M112 138l-10 36M112 138l10 36" stroke="#5ab8e0" stroke-width="1.6" opacity=".7"/>
+      <path d="M82 190l6 8 6-8 6 8 6-8 6 8 6-8 6 8 6-8 6 8 6-8" stroke="#bdeeff" stroke-width="2.2" fill="none" stroke-linejoin="round"/>
+    </g>`,
+  a_dragonlord: () => `
+    <g class="layer-armor">
+      <path d="${ARMOR_TORSO}" fill="#7a1d1d"/>
+      <path d="${ARMOR_TORSO_LIGHT}" fill="#b83a2a"/>
+      ${[0, 1].map((row) => [0, 1, 2, 3].map((col) => {
+    const x = 86 + col * 14 + (row % 2 ? 7 : 0);
+    const y = 164 + row * 9;
+    return `<path d="M${x} ${y}a6 6 0 0 1 11 0" stroke="#e0a213" stroke-width="2" fill="none" opacity=".8"/>`;
+  }).join('')).join('')}
+      <path d="${ARMOR_SKIRT}" fill="#5a1414"/>
+      <path d="M68 182h88v5H68z" fill="#ffcc4d"/>
+      <circle cx="112" cy="150" r="11" fill="#ffcc4d"/>
+      <path d="M112 142c4 4 7 5 9 4-2 4-2 7 0 10-4 1-7 4-9 7-2-3-5-6-9-7 2-3 2-6 0-10 2 1 5 0 9-4z" fill="#7a1d1d"/>
     </g>`,
 };
 
@@ -200,6 +253,26 @@ const WEAPONS = {
       <circle cx="52.5" cy="204" r="4" fill="#fff3c4"/>
       <path d="M40 96l-8-6 9 1zM65 96l8-6-9 1zM40 126l-8-6 9 1zM65 126l8-6-9 1z" fill="#ffe08a"/>
     </g>`,
+  w_trident: () => `
+    <g class="layer-weapon">
+      <rect x="49" y="96" width="7" height="110" rx="3" fill="#2a7d8c"/>
+      <path d="M36 70v18c0 8 7 12 16.5 12S69 96 69 88V70l-5 6v12c0 3-4 5-8 5V64l-3.5-8-3.5 8v29c-4 0-8-2-8-5V76z" fill="#5ee0dc"/>
+      <path d="M52.5 56l3.5 8v29h-3.5z" fill="#c9fffc"/>
+      <rect x="44" y="100" width="17" height="6" rx="3" fill="#ffcc4d"/>
+      <circle cx="52.5" cy="208" r="6" fill="#ffcc4d"/>
+    </g>`,
+  w_star: () => `
+    <g class="layer-weapon">
+      <path d="M52.5 62l8 16-3 90h-10l-3-90z" fill="#3848a8"/>
+      <path d="M52.5 62l8 16-3 90h-5z" fill="#6b7fe0"/>
+      <circle cx="52" cy="92" r="1.8" fill="#fff"/>
+      <circle cx="54" cy="112" r="1.4" fill="#fff"/>
+      <circle cx="51" cy="132" r="2" fill="#ffe08a"/>
+      <circle cx="54" cy="152" r="1.4" fill="#fff"/>
+      <path d="M32 166h41l-5 10H37z" fill="#ffcc4d"/>
+      <rect x="48" y="176" width="9" height="20" rx="4" fill="#1f2a6b"/>
+      <path d="M52.5 194l3 6.5 7 .6-5.3 4.6 1.6 6.8-6.3-3.8-6.3 3.8 1.6-6.8-5.3-4.6 7-.6z" fill="#ffe08a"/>
+    </g>`,
 };
 
 const SHIELDS = {
@@ -234,6 +307,20 @@ const SHIELDS = {
       <path d="M170 112c16 0 30 4 30 4v36c0 25-16 39-30 46-14-7-30-21-30-46v-36s14-4 30-4z" fill="#e0a213"/>
       <path d="M170 122c11 0 21 3 21 3v28c0 18-11 28-21 33-10-5-21-15-21-33v-28s10-3 21-3z" fill="#ffe08a"/>
       <path d="M170 134l6 13 14 1-11 9 4 14-13-8-13 8 4-14-11-9 14-1z" fill="#b8820c"/>
+    </g>`,
+  s_phoenix: () => `
+    <g class="layer-shield">
+      <path d="M170 114c15 0 28 4 28 4v36c0 24-15 37-28 43-13-6-28-19-28-43v-36s13-4 28-4z" fill="#a8260f"/>
+      <path d="M170 124c10 0 19 3 19 3v28c0 17-10 26-19 31-9-5-19-14-19-31v-28s9-3 19-3z" fill="#ff6a3d"/>
+      <path d="M170 176c-3-10-2-18 0-24-6 2-12 0-16-6 6 0 10-2 12-6-4-2-6-6-6-10 6 2 9 5 10 9 1-4 4-7 10-9 0 4-2 8-6 10 2 4 6 6 12 6-4 6-10 8-16 6 2 6 3 14 0 24z" fill="#ffcc4d"/>
+    </g>`,
+  s_crystal: () => `
+    <g class="layer-shield">
+      <path d="M170 112l30 16v36l-30 34-30-34v-36z" fill="#3d8fb8"/>
+      <path d="M170 112l30 16v36l-30 34z" fill="#5ab8e0"/>
+      <path d="M170 126l18 10v24l-18 20-18-20v-24z" fill="#d8f6ff" opacity=".85"/>
+      <path d="M170 126v54M152 136l36 24M188 136l-36 24" stroke="#5ab8e0" stroke-width="2" opacity=".7"/>
+      <circle cx="162" cy="134" r="2.4" fill="#fff"/>
     </g>`,
 };
 
@@ -278,6 +365,21 @@ const CAPES = {
       <path d="M52 230c30 12 88 12 120 0l3 10c-32 12-94 12-126 0z" fill="#ffe08a"/>
       <path d="M112 160l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z" fill="#ffcc4d"/>
     </g>`,
+  c_star: () => `
+    <g class="layer-cape">
+      <path d="${CAPE_PATH}" fill="#1f2a6b"/>
+      <path d="${CAPE_FOLD}" fill="#2e3d8f"/>
+      <path d="M148 168a12 12 0 1 0 8 20 10 10 0 1 1-8-20z" fill="#ffe08a"/>
+      ${[[70, 180, 2.4], [96, 214, 2], [128, 232, 2.6], [62, 226, 1.8], [150, 214, 2.2], [80, 150, 1.6], [120, 196, 1.6]]
+    .map(([x, y, r]) => starPath(x, y, r, '#fff')).join('')}
+    </g>`,
+  c_phoenix: () => `
+    <g class="layer-cape">
+      <path d="${CAPE_PATH}" fill="#c8331b"/>
+      <path d="${CAPE_FOLD}" fill="#ff6a3d"/>
+      <path d="M52 238c4-16 2-30-6-40 16 6 24 22 20 40zM78 244c4-16 2-30-6-40 16 6 24 22 20 40zM106 246c4-16 2-30-6-40 16 6 24 22 20 40zM134 244c4-16 2-30-6-40 16 6 24 22 20 40zM160 238c4-16 2-30-6-40 16 6 24 22 20 40z" fill="#ffcc4d"/>
+      <path d="M86 150c10 6 18 6 26 0 8 6 16 6 26 0" stroke="#ffcc4d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`,
 };
 
 const AURAS = {
@@ -321,6 +423,18 @@ const AURAS = {
         <path d="M196 230l-14-30 4 20-12-4 18 34-4-20z"/>
         <path d="M112 20l14-24-4 16 12-4-18 30 4-18z"/>
       </g>
+    </g>`,
+  au_rainbow: () => `
+    <g class="layer-aura" opacity="0.8">
+      ${['#ff6b6b', '#ff9d5c', '#ffcc4d', '#4ddb8b', '#59a9ff', '#b57bff'].map((col, i) => `
+      <ellipse cx="112" cy="170" rx="${104 - i * 5}" ry="${126 - i * 5}" fill="none" stroke="${col}" stroke-width="4.5" stroke-opacity=".55"/>`).join('')}
+    </g>`,
+  au_star: (c, uid) => `
+    <g class="layer-aura" opacity="0.95">
+      <ellipse cx="112" cy="170" rx="106" ry="128" fill="url(#auraStar-${uid})"/>
+      <ellipse cx="112" cy="170" rx="101" ry="123" fill="none" stroke="#ffe08a" stroke-opacity=".55" stroke-width="3"/>
+      ${[[22, 120, 5], [204, 150, 6], [112, 30, 7], [40, 238, 4], [190, 244, 5], [30, 180, 3], [196, 88, 4]]
+    .map(([x, y, r]) => starPath(x, y, r, '#fff3c4')).join('')}
     </g>`,
 };
 
@@ -399,6 +513,69 @@ const DRAGON_NECKS = {
     </g>`,
 };
 
+/* ============================ שיקויים לדרקון ============================ */
+// כל שיקוי משנה את צבעי העור של הדרקון (במקום צבע השחקן), מוסיף מרקם על הגוף
+// ו"כוח" קטן שמופיע סביבו. mark = צורת המרקם סביב (0,0), power = הכוח בקואורדינטות הדרקונון.
+
+const snowflake = (x, y, r = 5) => `<path d="M${x - r} ${y}h${r * 2}M${x} ${y - r}v${r * 2}M${x - r * 0.7} ${y - r * 0.7}l${r * 1.4} ${r * 1.4}M${x + r * 0.7} ${y - r * 0.7}l-${r * 1.4} ${r * 1.4}" stroke="#e8f9ff" stroke-width="1.8" stroke-linecap="round"/>`;
+const leaf = (x, y, rot, fill) => `<path transform="translate(${x} ${y}) rotate(${rot})" d="M-5 4c0-6 4-10 10-10 0 6-4 10-10 10z" fill="${fill}"/>`;
+const bolt = (x, y, fill) => `<path transform="translate(${x} ${y})" d="M-1-8h6l-3 6h4l-8 10 2-7h-4z" fill="${fill}"/>`;
+
+const DRAGON_SKINS = {
+  p_fire: {
+    liquid: '#ff6a2b', body: '#e8521f', belly: '#ffcf6b', dark: '#8c1f0a',
+    mark: '<path d="M0 7c-5-2-6-8-2-13 0 3 2 4 3 4 1-3 0-5-1-7 5 2 7 8 5 12-1 2-3 4-5 4z" fill="#a8260f" opacity=".75"/>',
+    power: `
+      <path d="M184 232c-6-5-14-6-21-2 4 1 6 3 6 5-4 0-8 2-9 6 9 2 17 0 24-6z" fill="#ff8a3d"/>
+      <path d="M183 233c-4-2-9-2-13 0 3 1 4 2 4 3-3 1-5 2-5 4 6 1 11-1 14-4z" fill="#ffd36b"/>`,
+    symbol: '<path d="M30 62c-6-2-8-8-3-14 0 4 2 5 4 5 1-4 0-6-1-9 7 3 9 10 6 15-1 2-3 3-6 3z" fill="#ffe08a"/>',
+  },
+  p_ice: {
+    liquid: '#69c8ff', body: '#8fd8f5', belly: '#f2fbff', dark: '#2f7fae',
+    mark: starPath(0, 0, 2.4, '#ffffff'),
+    power: snowflake(168, 206) + snowflake(224, 198, 4) + snowflake(164, 250, 4),
+    symbol: snowflake(30, 52, 7),
+  },
+  p_forest: {
+    liquid: '#4ddb8b', body: '#3fae62', belly: '#c9f5c0', dark: '#1f5e33',
+    mark: '<path d="M-5 4c0-6 4-10 10-10 0 6-4 10-10 10z" fill="#1f6e3a" opacity=".8"/>',
+    power: leaf(166, 214, -20, '#7ee0a3') + leaf(226, 204, 30, '#a8f0c0') + leaf(170, 256, 10, '#7ee0a3'),
+    symbol: '<path transform="translate(30 53)" d="M-8 7c0-10 7-16 16-16 0 10-7 16-16 16z" fill="#e8ffef"/>',
+  },
+  p_storm: {
+    liquid: '#9b6bf0', body: '#6a4bc4', belly: '#d9ccff', dark: '#2e1f66',
+    mark: bolt(0, 0, '#ffe066'),
+    power: bolt(168, 204, '#ffe066') + bolt(226, 196, '#ffe066') + bolt(230, 246, '#fff3a0'),
+    symbol: '<path d="M28 40h9l-5 9h6l-12 15 3-10h-6z" fill="#ffe066"/>',
+  },
+  p_gold: {
+    liquid: '#ffcc4d', body: '#e8b020', belly: '#fff3c4', dark: '#8a6206',
+    mark: '<path d="M-5 2a5 5 0 0 1 10 0" stroke="#fff3c4" stroke-width="2" fill="none" opacity=".85"/>',
+    power: starPath(170, 212, 3, '#fff3c4') + starPath(222, 202, 3.5, '#fff3c4') + starPath(230, 252, 2.5, '#ffe08a'),
+    symbol: starPath(30, 52, 5, '#fff8dc'),
+  },
+  p_shadow: {
+    liquid: '#4b2a8c', body: '#35245e', belly: '#6d5a9e', dark: '#150d2e',
+    mark: '<circle r="1.5" fill="#fff"/><circle cx="4" cy="3" r="1" fill="#f47fd0"/>',
+    power: `
+      <path d="M168 266c-8-6-6-16 4-18-4 6 0 11 4 14zM226 264c8-6 6-16-4-18 4 6 0 11-4 14z" fill="#9b6bf0" opacity=".7"/>
+      <circle cx="185.5" cy="218" r="2.4" fill="#e0b3ff"/>
+      <circle cx="198.5" cy="218" r="2.4" fill="#e0b3ff"/>`,
+    symbol: '<path d="M34 42a11 11 0 1 0 6 19 9 9 0 1 1-6-19z" fill="#f2e6ff"/>',
+  },
+};
+
+/** ציור הבקבוק לחנות ולחדר הנשק */
+const POTIONS = Object.fromEntries(Object.entries(DRAGON_SKINS).map(([id, s]) => [id, () => `
+  <g class="layer-potion">
+    <path d="M24 10h12v12c10 4 16 13 16 24 0 13-10 20-22 20S8 59 8 46c0-11 6-20 16-24z" fill="rgba(255,255,255,.14)"/>
+    <path d="M10 42c6-3 14 3 20 0s14-3 20 0c2 13-7 22-20 22S8 55 10 42z" fill="${s.liquid}"/>
+    <path d="M13 40c2-8 7-13 12-15" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".5" fill="none"/>
+    <path d="M24 10h12v12c10 4 16 13 16 24 0 13-10 20-22 20S8 59 8 46c0-11 6-20 16-24z" fill="none" stroke="#e8f0ff" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="21" y="4" width="18" height="8" rx="3" fill="#8a5a33"/>
+    ${s.symbol}
+  </g>`]));
+
 const SLOT_SETS = {
   helmet: HELMETS,
   armor: ARMORS,
@@ -408,18 +585,20 @@ const SLOT_SETS = {
   aura: AURAS,
   dragon_head: DRAGON_HEADS,
   dragon_neck: DRAGON_NECKS,
+  dragon_skin: POTIONS,
 };
 
 /** מסגרת תצוגה מותאמת לכל סוג פריט, כדי שהתמונה בחנות לא תיחתך */
 const ITEM_VIEWBOX = {
-  helmet: '30 40 164 76',
+  helmet: '30 16 164 100',
   armor: '60 126 104 92',
-  weapon: '26 74 56 140',
+  weapon: '26 52 56 162',
   shield: '134 106 72 102',
   cape: '44 124 136 122',
   aura: '2 38 220 224',
   dragon_head: '172 170 40 42',
   dragon_neck: '170 232 48 30',
+  dragon_skin: '2 0 56 70',
 };
 
 /**
@@ -443,21 +622,39 @@ export function itemArt(slot, id, color = '#59a9ff') {
 
 export const DRAGON_STAGES = ['ביצת דרקון', 'דרקונון', 'דרקון צעיר', 'דרקון אדיר'];
 
-/** gear = { head, neck } - מחרוזות SVG של אביזרי הדרקון (או ריק) */
-function dragon(stage, c, gear = {}) {
-  const body = shade(c, -0.05);
-  const belly = shade(c, 0.45);
-  const dark = shade(c, -0.45);
+// נקודות המרקם: על הגוף והזנב, ועל הראש (הלחיים והקודקוד - לא על העיניים)
+const SKIN_BODY_POINTS = [[178, 250], [214, 250], [184, 264], [208, 264], [226, 234], [221, 258], [196, 263]];
+const SKIN_HEAD_POINTS = [[176, 223], [208, 223], [186, 208], [199, 207]];
+
+/** שכבת מרקם של שיקוי, חתוכה לצורה (clipId) */
+function skinMarks(skin, points, clipId) {
+  if (!skin) return '';
+  return `<g clip-path="url(#${clipId})">${points.map(([x, y]) => `<g transform="translate(${x} ${y})">${skin.mark}</g>`).join('')}</g>`;
+}
+
+/**
+ * gear = { head, neck } - מחרוזות SVG של אביזרי הדרקון (או ריק)
+ * skinId = שיקוי פעיל (מזהה מ-DRAGON_SKINS), uid = מזהה ייחודי ל-clipPath
+ */
+function dragon(stage, c, gear = {}, skinId = null, uid = 'd') {
+  const skin = DRAGON_SKINS[skinId] || null;
+  const body = skin ? skin.body : shade(c, -0.05);
+  const belly = skin ? skin.belly : shade(c, 0.45);
+  const dark = skin ? skin.dark : shade(c, -0.45);
   const head = gear.head || '';
   const neck = gear.neck || '';
+  const clipBody = `dskinBody-${uid}`;
+  const clipHead = `dskinHead-${uid}`;
 
   if (stage <= 0) {
     // על הביצה: הכובע יושב על הקודקוד והצווארון נהיה סרט סביב הביצה
     return `
       <g class="layer-dragon">
+        ${skin ? `<defs><clipPath id="${clipBody}"><ellipse cx="196" cy="242" rx="24" ry="30"/></clipPath></defs>` : ''}
         <ellipse cx="196" cy="268" rx="26" ry="7" fill="rgba(0,0,0,.3)"/>
         <ellipse cx="196" cy="242" rx="24" ry="30" fill="${belly}"/>
         <path d="M196 212c-13 0-24 13-24 30s11 30 24 30z" fill="${body}" opacity=".6"/>
+        ${skinMarks(skin, [...SKIN_BODY_POINTS, ...SKIN_HEAD_POINTS], clipBody)}
         <path d="M180 236l6-8 6 8 6-8 6 8" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
         <path d="M180 254l6-8 6 8 6-8 6 8" stroke="${dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
         ${neck ? `<g transform="translate(2 0)">${neck}</g>` : ''}
@@ -471,14 +668,20 @@ function dragon(stage, c, gear = {}) {
 
   return `
     <g class="layer-dragon" transform="translate(196 268) scale(${scale}) translate(-196 -268)">
+      ${skin ? `<defs>
+        <clipPath id="${clipBody}"><path d="M214 258c14-4 24-16 22-30-8 10-16 12-24 10z"/><ellipse cx="196" cy="250" rx="24" ry="22"/></clipPath>
+        <clipPath id="${clipHead}"><ellipse cx="192" cy="222" rx="21" ry="19"/></clipPath>
+      </defs>` : ''}
       <ellipse cx="196" cy="270" rx="28" ry="7" fill="rgba(0,0,0,.3)"/>
       ${wings ? `<path d="M186 226c-22-22-40-24-52-18 12 6 16 16 14 28 14 8 30 4 38-10z" fill="${dark}"/>` : ''}
       <path d="M214 258c14-4 24-16 22-30-8 10-16 12-24 10z" fill="${body}"/>
       <ellipse cx="196" cy="250" rx="24" ry="22" fill="${body}"/>
       <ellipse cx="196" cy="256" rx="15" ry="14" fill="${belly}"/>
+      ${skinMarks(skin, SKIN_BODY_POINTS, clipBody)}
       <path d="M182 268l-4 10h8zM210 268l4 10h-8z" fill="${dark}"/>
       ${neck}
       <ellipse cx="192" cy="222" rx="21" ry="19" fill="${body}"/>
+      ${skinMarks(skin, SKIN_HEAD_POINTS, clipHead)}
       ${horns ? `<path d="M180 206l-6-14 12 8zM204 206l6-14-12 8z" fill="${dark}"/>` : ''}
       <path d="M180 206c-6-8-12-8-16-4 6 1 8 5 8 10z" fill="${dark}"/>
       <path d="M204 206c6-8 12-8 16-4-6 1-8 5-8 10z" fill="${dark}"/>
@@ -492,6 +695,7 @@ function dragon(stage, c, gear = {}) {
       <circle cx="188.5" cy="227" r="1.3" fill="${dark}"/>
       <circle cx="195.5" cy="227" r="1.3" fill="${dark}"/>
       <path d="M186 231.5c4 3 8 3 12 0" stroke="${dark}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      ${skin ? `<g class="dragon-power">${skin.power}</g>` : ''}
       ${head}
     </g>`;
 }
@@ -506,7 +710,7 @@ function defs(c, uid) {
         <stop offset="100%" stop-color="${shade(c, -0.22)}"/>
       </linearGradient>
       ${[['auraFire', '#ff9d3d', '#ffdf8a'], ['auraLeaf', '#4ddb8b', '#d6ffe8'],
-    ['auraIce', '#69c8ff', '#e8f9ff'], ['auraStorm', '#b57bff', '#ffe08a']].map(([id, mid, out]) => `
+    ['auraIce', '#69c8ff', '#e8f9ff'], ['auraStorm', '#b57bff', '#ffe08a'], ['auraStar', '#ffcc4d', '#fff3c4']].map(([id, mid, out]) => `
       <radialGradient id="${id}-${uid}" cx="50%" cy="50%" r="50%">
         <stop offset="55%" stop-color="${mid}" stop-opacity="0"/>
         <stop offset="85%" stop-color="${mid}" stop-opacity=".45"/>
@@ -571,7 +775,7 @@ export function renderAvatar(opts = {}) {
   ${part('helmet')}
   ${part('shield')}
   ${part('weapon')}
-  ${showDragon ? dragon(stage, c, { head: part('dragon_head'), neck: part('dragon_neck') }) : ''}
+  ${showDragon ? dragon(stage, c, { head: part('dragon_head'), neck: part('dragon_neck') }, eq.dragon_skin, uid) : ''}
 </svg>`;
 }
 

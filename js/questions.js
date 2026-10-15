@@ -11,6 +11,7 @@ export const TOPICS = {
   mult_table: { id: 'mult_table', name: 'לוח הכפל', region: 'הר לוח הכפל', icon: '⛰️' },
   mult_big: { id: 'mult_big', name: 'כפל מספרים גדולים', region: 'מכרות הכפל', icon: '⛏️' },
   add_sub: { id: 'add_sub', name: 'חיבור וחיסור עם המרה', region: 'גשר המספרים', icon: '🌉' },
+  vertical: { id: 'vertical', name: 'חיבור וחיסור במאונך עד מיליון', region: 'חומת המשבצות', icon: '🧱' },
   order_ops: { id: 'order_ops', name: 'סדר פעולות חשבון', region: 'מגדל הפעולות', icon: '🗼' },
   missing: { id: 'missing', name: 'המספר החסר', region: 'מערת החידות', icon: '🕯️' },
   weight: { id: 'weight', name: 'יחידות משקל', region: 'שוק המאזניים', icon: '⚖️' },
@@ -26,7 +27,7 @@ export const TOPICS = {
 
 /** סדר האזורים במפת העולם */
 export const REGION_ORDER = [
-  'mult_table', 'numberline', 'add_sub', 'mult_big', 'distribute',
+  'mult_table', 'numberline', 'add_sub', 'vertical', 'mult_big', 'distribute',
   'order_ops', 'missing', 'divisibility', 'weight', 'fractions',
   'geometry', 'chart', 'word', 'insight',
 ];
@@ -206,6 +207,163 @@ function genSub4(level = 1) {
       `בדיקה: ${fmt(ans)} + ${fmt(b)} = ${fmt(a)}.`,
     ],
   });
+}
+
+/* --- חיבור וחיסור במאונך עד מיליון (מחברת משבצות) --- */
+// התרגיל מוצג במאוזן, והילד מעתיק אותו למאונך במשבצות: כל ספרה בטור של המקום שלה.
+// מעל התרגיל יש שורת טיוטה להמרות ולפריטות, בדיוק כמו במבחן.
+
+const PLACE_NAMES = ['יחידות', 'עשרות', 'מאות', 'אלפים', 'עשרות אלפים', 'מאות אלפים', 'מיליונים'];
+const PLACE_TO = ['ליחידות', 'לעשרות', 'למאות', 'לאלפים', 'לעשרות האלפים', 'למאות האלפים', 'למיליונים'];
+const PLACE_FROM = ['מהיחידות', 'מהעשרות', 'מהמאות', 'מהאלפים', 'מעשרות האלפים', 'ממאות האלפים', 'מהמיליונים'];
+
+const digitAt = (n, i) => Math.floor(n / 10 ** i) % 10;
+const lenOf = (n) => String(n).length;
+const randLen = (len) => ri(10 ** (len - 1), 10 ** len - 1);
+
+/**
+ * פתרון טור אחר טור, כמו במחברת.
+ * marks[i] = מה כותבים בשורת ההמרות מעל טור i (0 = יחידות): '1' של המרה בחיבור,
+ * או הספרה החדשה אחרי פריטה בחיסור ('12', '9'). conversions = כמה המרות/פריטות היו.
+ */
+export function columnWork(a, b, op) {
+  const marks = [];
+  const steps = [];
+  let conversions = 0;
+
+  if (op === '+') {
+    let carry = 0;
+    for (let i = 0; i < lenOf(a + b); i++) {
+      const P = PLACE_NAMES[i];
+      marks.push(carry ? '1' : '');
+      const parts = [i < lenOf(a) ? digitAt(a, i) : null, i < lenOf(b) ? digitAt(b, i) : null].filter((d) => d !== null);
+      if (!parts.length) {
+        steps.push(`${P}: נשארה רק ההמרה, ולכן כותבים 1.`);
+        carry = 0;
+        continue;
+      }
+      if (parts.length === 1 && !carry) {
+        steps.push(`${P}: אין מה לחבר - מורידים את ה-${parts[0]} כמו שהוא.`);
+        continue;
+      }
+      const s = parts.reduce((x, y) => x + y, 0) + carry;
+      const sum = `${parts.join(' + ')}${carry ? ' + 1' : ''} = ${s}`;
+      if (s >= 10) {
+        steps.push(`${P}: ${sum} - כותבים ${s % 10} וממירים 1 ${PLACE_TO[i + 1]}.`);
+        carry = 1;
+        conversions += 1;
+      } else {
+        steps.push(`${P}: ${sum}.`);
+        carry = 0;
+      }
+    }
+    return { marks, steps, conversions };
+  }
+
+  let borrow = 0;
+  for (let i = 0; i < lenOf(a); i++) {
+    const P = PLACE_NAMES[i];
+    const x = digitAt(a, i);
+    const hasY = i < lenOf(b);
+    const y = hasY ? digitAt(b, i) : 0;
+    const top = x - borrow;
+    const need = top < y;
+    const used = need ? top + 10 : top;
+    const d = used - y;
+    marks.push(borrow || need ? String(used) : '');
+
+    if (borrow && x === 0) {
+      steps.push(`${P}: ה-0 נתן 1 לטור הקודם, ולכן פורטים גם כאן 1 ${PLACE_FROM[i + 1]}: 10 − 1 = 9.${hasY ? ` עכשיו 9 − ${y} = ${d}.` : ''}`);
+    } else {
+      const head = borrow ? `${P}: אחרי הפריטה נשאר ${top}.` : `${P}:`;
+      let body;
+      if (need) body = `${top} קטן מ-${y}, ולכן פורטים 1 ${PLACE_FROM[i + 1]}: ${used} − ${y} = ${d}.`;
+      else if (!hasY && i === lenOf(a) - 1 && d === 0) body = 'נשאר 0, ובתחילת מספר לא כותבים אפס.';
+      else if (!hasY) body = `אין מה לחסר - מורידים ${d}.`;
+      else body = `${top} − ${y} = ${d}.`;
+      steps.push(`${head} ${body}`);
+    }
+    if (need) conversions += 1;
+    borrow = need ? 1 : 0;
+  }
+  return { marks, steps, conversions };
+}
+
+/** שדות שאלת מאונך. level: 0 - אלפים (עם תוויות לטורים), 1 - עשרות אלפים, 2 - מאות אלפים */
+function verticalFields(a, b, op, level) {
+  const ans = op === '+' ? a + b : a - b;
+  const work = columnWork(a, b, op);
+  const sign = op === '+' ? '+' : '−';
+  const width = Math.max(lenOf(a), lenOf(b), lenOf(ans));
+  const first = work.steps[0].replace(/^יחידות: /, '');
+  const hint = op === '+'
+    ? `יחידות מתחת ליחידות! מתחילים לחבר מהיחידות: ${first} כשיוצא 10 או יותר - ממירים 1 לטור הבא וכותבים אותו בשורת ההמרות למעלה.`
+    : `המספר הראשון למעלה, ויחידות מתחת ליחידות. מתחילים מהיחידות: ${first} את המספר החדש אחרי פריטה כותבים בשורת ההמרות.`;
+  const steps = [
+    `מעתיקים במאונך: ${fmt(a)} למעלה ו-${fmt(b)} מתחתיו, כך שהיחידות באותו טור.`,
+    ...work.steps,
+    `התוצאה: ${fmt(a)} ${sign} ${fmt(b)} = ${fmt(ans)}.`,
+  ];
+  if (op !== '+') steps.push(`בדיקה: ${fmt(ans)} + ${fmt(b)} = ${fmt(a)}.`);
+  return {
+    topic: 'vertical',
+    ui: 'vertical',
+    instruction: 'העתיקו את התרגיל למאונך במחברת המשבצות, ופתרו:',
+    expr: `${fmt(a)} ${sign} ${fmt(b)} = ?`,
+    exprPlain: `${a}${op === '+' ? '+' : '-'}${b}`,
+    answer: ans,
+    vertical: { a, b, op: sign, cols: width + 1, marks: work.marks, labels: level === 0 },
+    hint,
+    steps,
+  };
+}
+
+/** אורכי שני המספרים לפי רמה. במחברת הכי חשוב לתרגל מספרים באורכים שונים */
+const VERT_ADD_LENGTHS = [
+  [[4, 4], [4, 3], [3, 4], [4, 4]],
+  [[5, 5], [5, 4], [4, 5], [5, 3], [3, 5]],
+  [[6, 6], [6, 5], [5, 6], [6, 4], [4, 6], [6, 3]],
+];
+const VERT_SUB_LENGTHS = [
+  [[4, 4], [4, 3], [4, 4]],
+  [[5, 5], [5, 4], [5, 3]],
+  [[6, 6], [6, 5], [6, 4], [6, 3]],
+];
+
+function genVertAdd(level = 1) {
+  const lv = Math.min(Math.max(level, 0), 2);
+  const minConv = lv === 0 ? 1 : 2;
+  let a; let b;
+  for (let tries = 0; tries < 500; tries++) {
+    const [la, lb] = pick(VERT_ADD_LENGTHS[lv]);
+    a = randLen(la);
+    b = randLen(lb);
+    if (a + b > 999999) continue;
+    if (columnWork(a, b, '+').conversions >= minConv) break;
+  }
+  return Q({ type: 'vert_add', ...verticalFields(a, b, '+', lv) });
+}
+
+/** מספר עם אפסים באמצע (300,506) - כדי לתרגל פריטה דרך אפסים */
+function withZeros(len) {
+  let s = String(ri(2, 9));
+  for (let i = 1; i < len; i++) s += Math.random() < 0.55 ? '0' : String(ri(1, 9));
+  return Number(s);
+}
+
+function genVertSub(level = 1) {
+  const lv = Math.min(Math.max(level, 0), 2);
+  const minConv = lv === 0 ? 1 : 2;
+  let a; let b;
+  for (let tries = 0; tries < 500; tries++) {
+    const [la, lb] = pick(VERT_SUB_LENGTHS[lv]);
+    a = lv > 0 && Math.random() < 0.3 ? withZeros(la) : randLen(la);
+    b = randLen(lb);
+    if (b > a) [a, b] = [b, a];
+    if (a - b < 10) continue;
+    if (columnWork(a, b, '-').conversions >= minConv) break;
+  }
+  return Q({ type: 'vert_sub', ...verticalFields(a, b, '-', lv) });
 }
 
 /* --- סדר פעולות חשבון --- */
@@ -1590,6 +1748,8 @@ export const GENERATORS = [
   { type: 'mult_by_unit', topic: 'mult_big', weight: 1, gen: genMultByUnit },
   { type: 'add4', topic: 'add_sub', weight: 1.1, gen: genAdd4 },
   { type: 'sub4', topic: 'add_sub', weight: 1.1, gen: genSub4 },
+  { type: 'vert_add', topic: 'vertical', weight: 0.8, gen: genVertAdd },
+  { type: 'vert_sub', topic: 'vertical', weight: 0.8, gen: genVertSub },
   // בשלבים הראשונים - בעיקר שאלות הקשה על הפעולה הראשונה
   { type: 'order_ops', topic: 'order_ops', weight: 0.9, levelWeights: [0.5, 1, 1], gen: genOrderOps },
   { type: 'order_ops_tap', topic: 'order_ops', weight: 1.2, levelWeights: [3, 1.5, 1], gen: genOrderOpsTap },
@@ -1687,6 +1847,9 @@ export const TEACHER_QUESTIONS = [
       'התוצאה: 5,725. בדיקה: 5,725 + 3,459 = 9,184.',
     ],
   }),
+  // אותם תרגילים מהדף, הפעם בהעתקה למאונך במחברת המשבצות
+  () => T({ type: 'teacher_vert_add', ...verticalFields(9184, 3459, '+', 1) }),
+  () => T({ type: 'teacher_vert_sub', ...verticalFields(9184, 3459, '-', 1) }),
   () => T({
     type: 'teacher_order_1', topic: 'order_ops',
     expr: '30 − 6 : 6 = ?', exprPlain: '30-6/6', answer: 29,

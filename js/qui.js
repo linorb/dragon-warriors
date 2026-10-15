@@ -901,6 +901,283 @@ function geoUI(q, ctx) {
   };
 }
 
+/* ============================ 14. מחברת משבצות - חיבור וחיסור במאונך ============================ */
+// שלב 1: מעתיקים את התרגיל מהמאוזן למשבצות - המספר הראשון למעלה, יחידות מתחת ליחידות,
+// וסימן הפעולה משמאל למספר השני. שלב 2: פותרים בשורה שמתחת לקו.
+// שורת הטיוטה הקטנה מעל התרגיל היא להמרות ולפריטות, ולא נבדקת.
+// כשהתוצאה במאונך נכונה, היא נכתבת לבד גם בתרגיל המאוזן.
+
+const PLACE_SHORT = ['י', 'ע', 'מ', 'א', 'ע"א', 'מ"א', 'מיל'];
+const PLACE_OF = ['היחידות', 'העשרות', 'המאות', 'האלפים', 'עשרות האלפים', 'מאות האלפים', 'המיליונים'];
+const VROWS = ['carry', 'top', 'bot', 'res'];
+const VROW_NAMES = { carry: 'שורת ההמרות', top: 'המספר העליון', bot: 'המספר התחתון', res: 'התוצאה' };
+
+function verticalUI(q, ctx) {
+  const V = q.vertical;
+  const N = V.cols;                    // טורי הספרות, משמאל (0) לימין (N-1). טור הסימן נפרד
+  const ans = String(q.answer);
+  const cells = Object.fromEntries(VROWS.map((r) => [r, Array(N).fill('')]));
+  const struck = new Set();            // ספרות במספר העליון שנמחקו בקו (בפריטה)
+  let sign = '';
+  let stage = 'copy';                  // copy -> solve -> done
+  let ones = -1;                       // טור היחידות, לפי איפה שהילד העתיק
+  let solved = false;
+  let host = null;
+
+  /** קריאת שורה: { empty } / { gap } / { str, first, last } */
+  function readRow(row) {
+    const filled = cells[row].map((v, c) => (v !== '' ? c : -1)).filter((c) => c >= 0);
+    if (!filled.length) return { empty: true };
+    const first = filled[0];
+    const last = filled[filled.length - 1];
+    if (filled.length !== last - first + 1) return { gap: true };
+    return { str: cells[row].slice(first, last + 1).join(''), first, last };
+  }
+
+  function cell(row, c) {
+    const lockedCopy = stage !== 'copy' && (row === 'top' || row === 'bot');
+    const cls = ['vg-cell', `vg-${row}`];
+    if (lockedCopy) cls.push('vg-ok');
+    if (row === 'top' && struck.has(c)) cls.push('struck');
+    return `<input class="${cls.join(' ')}" type="text" inputmode="numeric" autocomplete="off"
+      data-row="${row}" data-col="${c}" value="${esc(cells[row][c])}" aria-label="${VROW_NAMES[row]}, טור ${c + 1}"
+      ${lockedCopy ? 'readonly' : ''} ${stage === 'done' ? 'disabled' : ''}>`;
+  }
+
+  function horizontal() {
+    const shown = solved || stage === 'done';
+    const left = esc(q.expr.replace(/\?$/, ''));
+    return `<div class="expr expr-big" dir="ltr">${left}<span class="blank ${shown ? 'filled' : ''}">${shown ? fmt(q.answer) : '?'}</span></div>`;
+  }
+
+  function draw() {
+    const cols = Array.from({ length: N }, (_, c) => c);
+    const labels = V.labels
+      ? `<span class="vg-label"></span>${cols.map((c) => `<span class="vg-label">${PLACE_SHORT[N - 1 - c] || ''}</span>`).join('')}`
+      : '';
+    const signBtn = `<button class="vg-sign vg-bot" type="button" data-sign aria-label="סימן הפעולה"
+      ${stage !== 'copy' ? 'disabled' : ''}>${sign || '<span class="vg-ph">±</span>'}</button>`;
+    const rows = [
+      `<span class="vg-blank vg-carry"></span>${cols.map((c) => cell('carry', c)).join('')}`,
+      `<span class="vg-blank"></span>${cols.map((c) => cell('top', c)).join('')}`,
+      `${signBtn}${cols.map((c) => cell('bot', c)).join('')}`,
+      `<span class="vg-blank"></span>${cols.map((c) => cell('res', c)).join('')}`,
+    ].join('');
+
+    let tip;
+    if (stage === 'copy') {
+      tip = '1️⃣ מעתיקים: לוחצים על משבצת וכותבים ספרה - המספר הראשון למעלה, השני מתחתיו, יחידות מתחת ליחידות. את סימן הפעולה בוחרים במשבצת שמשמאל למספר השני.';
+    } else if (stage === 'solve') {
+      tip = `2️⃣ פותרים מהיחידות, בשורה שמתחת לקו. השורה הצהובה הקטנה למעלה היא טיוטה ${V.op === '+' ? 'להמרות' : 'לפריטות'}.${V.op === '+' ? '' : ' לחיצה על ספרה במספר העליון מוחקת אותה בקו.'}`;
+    } else {
+      tip = solved ? 'פתרתם במאונך - והתשובה עברה גם לתרגיל המאוזן ✔' : 'כך נראה הפתרון המלא במאונך.';
+    }
+
+    host.innerHTML = `${instructionLine(q)}
+      ${horizontal()}
+      <div class="vnote">
+        <div class="vgrid" dir="ltr" style="--n:${N + 1}">${labels}${rows}</div>
+      </div>
+      <div class="nl-note vnote-tip">${tip}</div>`;
+    wire();
+  }
+
+  function focusCell(row, c) {
+    if (!host || c < 0 || c >= N) return;
+    const el = host.querySelector(`.vg-cell[data-row="${row}"][data-col="${c}"]`);
+    if (el && !el.disabled) el.focus();
+  }
+
+  function markBad(row) {
+    if (!host) return;
+    const sel = row === 'sign' ? '.vg-sign' : `.vg-cell[data-row="${row}"]`;
+    host.querySelectorAll(sel).forEach((el) => el.classList.add('vg-bad'));
+  }
+
+  function clearBad() {
+    if (host) host.querySelectorAll('.vg-bad').forEach((el) => el.classList.remove('vg-bad'));
+  }
+
+  function setSign(s) {
+    if (stage !== 'copy') return;
+    sign = s;
+    const btn = host && host.querySelector('[data-sign]');
+    if (btn) btn.textContent = sign;
+    clearBad();
+  }
+
+  function wire() {
+    const pad = host.querySelector('.vnote');
+    if (!pad) return;
+
+    pad.addEventListener('focusin', (e) => {
+      if (e.target.classList.contains('vg-cell') && !e.target.readOnly) e.target.select();
+    });
+
+    pad.addEventListener('input', (e) => {
+      const el = e.target.closest('.vg-cell');
+      if (!el) return;
+      const row = el.dataset.row;
+      const c = Number(el.dataset.col);
+      const digits = el.value.replace(/\D/g, '');
+      const v = row === 'carry' ? digits.slice(-2) : digits.slice(-1);
+      el.value = v;
+      cells[row][c] = v;
+      clearBad();
+      // העתקה כותבים משמאל לימין, ואת התוצאה מחשבים מהיחידות - מימין לשמאל
+      if (v && row === 'top') focusCell(row, c + 1);
+      if (v && row === 'bot') focusCell(row, c + 1);
+      if (v && row === 'res') focusCell(row, c - 1);
+    });
+
+    pad.addEventListener('keydown', (e) => {
+      const el = e.target.closest('.vg-cell');
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        ctx.verdict(api.submit());
+        return;
+      }
+      if (e.key === '+' || e.key === '-') {
+        e.preventDefault();
+        setSign(e.key === '+' ? '+' : '−');
+        return;
+      }
+      if (!el) return;
+      const row = el.dataset.row;
+      const c = Number(el.dataset.col);
+      const r = VROWS.indexOf(row);
+      const moves = {
+        ArrowLeft: [row, c - 1], ArrowRight: [row, c + 1],
+        ArrowUp: [VROWS[r - 1], c], ArrowDown: [VROWS[r + 1], c],
+      };
+      if (moves[e.key] && moves[e.key][0]) {
+        e.preventDefault();
+        focusCell(...moves[e.key]);
+      } else if (e.key === 'Backspace' && el.value === '' && !el.readOnly) {
+        e.preventDefault();
+        focusCell(row, row === 'res' ? c + 1 : c - 1);
+      }
+    });
+
+    pad.addEventListener('click', (e) => {
+      if (e.target.closest('[data-sign]')) {
+        setSign(sign === '+' ? '−' : '+');
+        return;
+      }
+      const el = e.target.closest('.vg-cell');
+      // בשלב הפתרון: לחיצה על ספרה במספר העליון מוחקת אותה בקו, כמו בפריטה על דף
+      if (el && stage === 'solve' && el.dataset.row === 'top' && el.value) {
+        const c = Number(el.dataset.col);
+        if (struck.has(c)) struck.delete(c); else struck.add(c);
+        el.classList.toggle('struck', struck.has(c));
+      }
+    });
+  }
+
+  /** בדיקת ההעתקה. מחזירה פסק דין, או null אם ההעתקה נכונה */
+  function checkCopy() {
+    const top = readRow('top');
+    const bot = readRow('bot');
+    if (top.empty && bot.empty) return { status: 'incomplete', message: 'קודם מעתיקים את התרגיל למשבצות ✍️' };
+    if (top.empty || bot.empty) return { status: 'incomplete', message: 'צריך להעתיק את שני המספרים - אחד מתחת לשני.' };
+    if (!sign) return { status: 'incomplete', message: 'בחרו את סימן הפעולה במשבצת שמשמאל למספר השני.' };
+    if (top.gap || bot.gap) {
+      markBad(top.gap ? 'top' : 'bot');
+      return { status: 'wrong', message: 'נשארה משבצת ריקה באמצע מספר. כל ספרה צמודה לספרה שלידה.' };
+    }
+    const A = String(V.a);
+    const B = String(V.b);
+    if (top.str === B && bot.str === A) {
+      markBad('top'); markBad('bot');
+      return { status: 'wrong', message: 'המספרים התהפכו: המספר הראשון בתרגיל נכתב למעלה, והשני מתחתיו.' };
+    }
+    if (top.str !== A) { markBad('top'); return { status: 'wrong', message: 'המספר העליון לא הועתק נכון. בדקו ספרה אחרי ספרה.' }; }
+    if (bot.str !== B) { markBad('bot'); return { status: 'wrong', message: 'המספר התחתון לא הועתק נכון. בדקו ספרה אחרי ספרה.' }; }
+    if (sign !== V.op) { markBad('sign'); return { status: 'wrong', message: 'בדקו את סימן הפעולה - האם זה חיבור או חיסור?' }; }
+    if (top.last !== bot.last) {
+      markBad('top'); markBad('bot');
+      return { status: 'wrong', message: 'המספרים לא מיושרים: יחידות מתחת ליחידות, עשרות מתחת לעשרות.' };
+    }
+    if (top.last + 1 < ans.length) {
+      return { status: 'incomplete', message: 'אין מספיק מקום לתוצאה. הזיזו את התרגיל ימינה, צמוד לקצה המחברת.' };
+    }
+    ones = top.last;
+    return null;
+  }
+
+  function checkResult() {
+    const res = readRow('res');
+    if (res.empty) return { status: 'incomplete', message: 'כתבו את התוצאה בשורה שמתחת לקו 🙂' };
+    if (res.gap) { markBad('res'); return { status: 'wrong', message: 'נשארה משבצת ריקה באמצע התוצאה.' }; }
+    if (res.last !== ones) {
+      markBad('res');
+      return { status: 'wrong', message: 'גם בתוצאה - יחידות מתחת ליחידות.' };
+    }
+    if (Number(res.str) === q.answer) return null;
+    // מוצאים את הטור הראשון (מהיחידות) שבו יש טעות
+    for (let p = 0; p <= ones; p++) {
+      const got = cells.res[ones - p] || '';
+      const want = p < ans.length ? ans[ans.length - 1 - p] : '';
+      if (got !== want && !(want === '' && (got === '0' || got === ''))) {
+        markBad('res');
+        return { status: 'wrong', message: `כמעט! בדקו שוב את טור ${PLACE_OF[p] || 'השמאלי'}${V.op === '+' ? ' - אולי שכחתם המרה?' : ' - אולי שכחתם פריטה?'}` };
+      }
+    }
+    markBad('res');
+    return { status: 'wrong' };
+  }
+
+  /** בסוף שאלה שלא נפתרה - מציירים את הפתרון המלא במחברת */
+  function fillSolution() {
+    const place = (row, str) => {
+      cells[row] = Array(N).fill('');
+      [...str].reverse().forEach((d, k) => { cells[row][N - 1 - k] = d; });
+    };
+    place('top', String(V.a));
+    place('bot', String(V.b));
+    place('res', ans);
+    cells.carry = Array(N).fill('');
+    struck.clear();
+    V.marks.forEach((m, i) => {
+      if (!m) return;
+      cells.carry[N - 1 - i] = m;
+      if (V.op !== '+') struck.add(N - 1 - i);
+    });
+    sign = V.op;
+  }
+
+  const api = {
+    usesKeypad: false,
+    usesSubmit: true,
+    mount(el) { host = el; draw(); },
+    submit() {
+      if (stage === 'done') return { status: 'incomplete', message: 'השאלה הסתיימה.' };
+      if (stage === 'copy') {
+        const bad = checkCopy();
+        if (bad) return bad;
+        stage = 'solve';
+        if (readRow('res').empty) {
+          draw();
+          focusCell('res', ones);
+          return { status: 'progress', message: 'העתקה מושלמת! ✍️ עכשיו פותרים במאונך - מתחילים מהיחידות.' };
+        }
+        draw();
+      }
+      const bad = checkResult();
+      if (bad) return bad;
+      solved = true;
+      return { status: 'correct', message: `פתרתם במאונך! ${fmt(V.a)} ${V.op} ${fmt(V.b)} = ${fmt(q.answer)}` };
+    },
+    lock() {
+      if (!solved) fillSolution();
+      stage = 'done';
+      if (host) draw();
+    },
+  };
+  return api;
+}
+
 /* ============================ בחירת הרכיב ============================ */
 
 const REGISTRY = {
@@ -918,6 +1195,7 @@ const REGISTRY = {
   quiz: quizUI,
   chart: chartUI,
   geo: geoUI,
+  vertical: verticalUI,
 };
 
 export function createQuestionUI(q, ctx) {

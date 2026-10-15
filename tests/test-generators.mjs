@@ -290,6 +290,43 @@ const byType = (t) => GENERATORS.find((g) => g.type === t).gen;
   check('חיסור עם פריטה ותוצאה חיובית', ok);
 }
 
+// מאונך: בדיקה עצמאית של שורת ההמרות - טור אחר טור, בלי להשתמש בקוד של הגנרטור
+{
+  const digit = (n, i) => Math.floor(n / 10 ** i) % 10;
+  for (const [type, op] of [['vert_add', '+'], ['vert_sub', '−']]) {
+    let ok = true; let detail = '';
+    const sawLevel = [false, false, false];
+    for (const level of [0, 1, 2]) {
+      for (let i = 0; i < 300; i++) {
+        const q = byType(type)(level);
+        const { a, b, marks, cols } = q.vertical;
+        const ans = q.answer;
+        if (q.vertical.op !== op) { ok = false; detail = `סימן ${q.vertical.op}`; }
+        if (a > 999999 || b > 999999 || ans > 999999 || ans < 0) { ok = false; detail = `מעל מיליון: ${a} ${op} ${b}`; }
+        if (cols !== Math.max(String(a).length, String(b).length, String(ans).length) + 1) { ok = false; detail = 'מספר טורים'; }
+        if (!marks.some(Boolean)) { ok = false; detail = `אין המרה: ${a} ${op} ${b}`; }
+        if (String(a).length === level + 4) sawLevel[level] = true;
+        for (let k = 0; k < marks.length; k++) {
+          const m = marks[k] === '' ? null : Number(marks[k]);
+          const got = op === '+'
+            ? (digit(a, k) + digit(b, k) + (m ? 1 : 0)) % 10
+            : (m === null ? digit(a, k) : m) - digit(b, k);
+          if (got !== digit(ans, k)) { ok = false; detail = `${a} ${op} ${b}: טור ${k} נותן ${got}`; }
+        }
+      }
+    }
+    check(`מאונך (${type}): המרות נכונות בכל טור ותוצאה עד מיליון`, ok, detail);
+    check(`מאונך (${type}): הרמות עולות מאלפים למאות אלפים`, sawLevel.every(Boolean), JSON.stringify(sawLevel));
+  }
+
+  let mixed = false;
+  for (let i = 0; i < 200; i++) {
+    const { a, b } = byType('vert_add')(2).vertical;
+    if (String(a).length !== String(b).length) mixed = true;
+  }
+  check('מאונך: יש תרגילים עם מספרים באורכים שונים (תרגול יישור)', mixed);
+}
+
 {
   let ok = true;
   for (let i = 0; i < 200; i++) {
@@ -390,7 +427,7 @@ const byType = (t) => GENERATORS.find((g) => g.type === t).gen;
 
 const TEACHER_EXPECTED = {
   teacher_mult_1: 2250, teacher_mult_2: 336, teacher_mult_3: 1920, teacher_mult_4: 1300,
-  teacher_add: 12643, teacher_sub: 5725,
+  teacher_add: 12643, teacher_sub: 5725, teacher_vert_add: 12643, teacher_vert_sub: 5725,
   teacher_order_1: 29, teacher_order_2: 74,
   teacher_missing_1: 8, teacher_missing_2: 4, teacher_missing_3: 7, teacher_missing_4: 0,
   teacher_weight_1: 1096, teacher_weight_2: 2112, teacher_weight_3: 996, teacher_weight_4: 990,

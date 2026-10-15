@@ -317,12 +317,14 @@ function finishBattle() {
   }
   const streakBonus = battle.streakInfo.isNewDay ? battle.streakInfo.bonus : 0;
   bonus += streakBonus;
+  const defeated = battle.hp <= 0;
+  const bossBonus = defeated && battle.monster.boss ? REWARDS.bossBonus : 0;
+  bonus += bossBonus;
   if (bonus > 0) addCoins(bonus);
   bumpSessions();
   updateHUD();
 
   const s = getState();
-  const defeated = battle.hp <= 0;
   const days = battle.streakInfo.streak === 1 ? 'יום אחד' : `${fmt(battle.streakInfo.streak)} ימים`;
   const value = (v) => (/[֐-׿]/.test(v) ? `<span>${esc(v)}</span>` : `<span class="num">${esc(v)}</span>`);
 
@@ -341,6 +343,7 @@ function finishBattle() {
   const bonusRows = [];
   if (perfect) bonusRows.push([`בונוס קרב מושלם! ${fmt(total)} מתוך ${fmt(total)}`, `🪙 +${fmt(REWARDS.perfectBonus)}`]);
   if (streakBonus > 0) bonusRows.push([`בונוס רצף אימונים - ${days}`, `🪙 +${fmt(streakBonus)}`]);
+  if (bossBonus > 0) bonusRows.push([`בונוס ניצחון על הבוס ${battle.monster.name}!`, `🪙 +${fmt(bossBonus)}`]);
 
   $('#summary-list').innerHTML = [
     ...rows.map(([k, v]) => `<li><span>${esc(k)}</span>${value(v)}</li>`),
@@ -381,7 +384,8 @@ export function startBattle(options = {}) {
     streakInfo: touchDailyStreak(),
   };
 
-  $('#monster-name').textContent = monster.name;
+  $('#monster-name').textContent = monster.boss ? `👑 בוס: ${monster.name}` : monster.name;
+  $('#monster-name').classList.toggle('boss', Boolean(monster.boss));
   $('#monster-art').classList.remove('exploding');
   document.querySelectorAll('#screen-battle .boom').forEach((b) => b.remove());
   drawMonster();

@@ -277,6 +277,7 @@ body {
 .monster-zone { flex: 1; text-align: center; position: relative; }
 #screen-battle { overflow-x: clip; } /* שהפיצוץ לא ייצור גלילה לרוחב במסך צר */
 .monster-name { font-weight: 900; font-size: 20px; margin-bottom: 6px; }
+.monster-name.boss { color: #ff8a6b; text-shadow: 0 0 12px rgba(255, 90, 60, .55); }
 .monster-art svg { width: 100%; max-width: 210px; height: auto; }
 .monster-art { display: flex; justify-content: center; }
 
@@ -535,6 +536,81 @@ body {
 .pad-row.ok .pad-in { border-color: rgba(77, 219, 139, .7); }
 .pad-op { font-size: 20px; font-weight: 900; opacity: .8; }
 
+/* ===== מחברת משבצות - חיבור וחיסור במאונך ===== */
+.expr .blank.filled { color: var(--green); border-bottom-color: var(--green); }
+
+.vnote {
+  margin: 12px auto 0;
+  padding: 14px 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 14px;
+  background: #fdfbf3;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+}
+
+.vgrid {
+  --cell: clamp(32px, 9.5vw, 46px);
+  --line: #a9c4ea;
+  --pen: #1d2a5c;
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--cell));
+  width: max-content;
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.vg-cell, .vg-sign, .vg-blank, .vg-label {
+  width: var(--cell);
+  height: var(--cell);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--pen);
+  font-family: var(--font);
+  font-size: calc(var(--cell) * .62);
+  font-weight: 700;
+  text-align: center;
+  line-height: var(--cell);
+}
+
+.vg-label { height: 22px; line-height: 22px; font-size: 12px; font-weight: 500; color: #7a8bb5; }
+
+/* שורת הטיוטה להמרות: נמוכה יותר, בצבע עיפרון כתום */
+.vg-carry {
+  height: max(28px, calc(var(--cell) * .74));
+  line-height: max(28px, calc(var(--cell) * .74));
+  font-size: max(16px, calc(var(--cell) * .42));
+  color: #d9480f;
+  background: rgba(255, 204, 77, .18);
+}
+
+/* הקו שמתחת לתרגיל */
+.vg-bot { border-bottom: 3px solid var(--pen); }
+
+.vg-cell:focus { outline: none; background: #fff3c4; box-shadow: inset 0 0 0 2px var(--gold-deep); }
+.vg-cell:disabled { opacity: 1; -webkit-text-fill-color: currentColor; }
+.vg-cell.vg-ok { color: #1f7a45; background: rgba(77, 219, 139, .12); }
+.vg-cell.vg-bad, .vg-sign.vg-bad { background: rgba(255, 107, 107, .3); }
+.vg-res { color: #0b4fa8; }
+
+/* ספרה שנמחקה בקו (פריטה) */
+.vg-cell.struck {
+  background-image: linear-gradient(to top right, transparent 44%, #d23c3c 45%, #d23c3c 55%, transparent 56%);
+}
+
+.vg-sign { cursor: pointer; color: #d23c3c; font-weight: 900; }
+.vg-sign:disabled { cursor: default; }
+.vg-sign:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: -2px; }
+.vg-ph { color: #b9c4d6; font-weight: 500; }
+
+.vnote-tip { text-align: right; margin-top: 10px; line-height: 1.6; }
+
 .q-feedback {
   margin-top: 12px;
   border-radius: var(--radius-sm);
@@ -639,6 +715,11 @@ body {
 .shop-item.tier-rare { border-color: rgba(89, 169, 255, .6); }
 .shop-item.tier-epic { border-color: rgba(181, 123, 255, .7); }
 .shop-item.tier-legend { border-color: rgba(255, 204, 77, .85); box-shadow: 0 0 18px rgba(255, 204, 77, .25); }
+.shop-item.tier-mythic {
+  border-color: #ff5ad1;
+  box-shadow: 0 0 22px rgba(255, 90, 209, .35), inset 0 0 18px rgba(159, 227, 255, .12);
+  background: linear-gradient(160deg, rgba(255, 90, 209, .14), rgba(89, 169, 255, .1));
+}
 
 .item-art { height: 84px; display: flex; align-items: center; justify-content: center; }
 .item-art svg { height: 84px; width: auto; }
@@ -649,6 +730,7 @@ body {
 .tier-rare .item-tier { color: var(--blue); }
 .tier-epic .item-tier { color: var(--purple); }
 .tier-legend .item-tier { color: var(--gold); }
+.tier-mythic .item-tier { color: #ff8ae0; font-weight: 700; }
 
 .item-price { font-weight: 900; }
 .shop-item .btn { font-size: 16px; min-height: 46px; padding: 10px; }

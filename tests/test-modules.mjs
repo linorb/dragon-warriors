@@ -59,8 +59,10 @@ const { CATALOG, SLOTS, TIERS } = mods.shop;
     equipped: Object.fromEntries(SLOTS.map((s) => [s.id, CATALOG.find((i) => i.slot === s.id).id])),
     dragonStage: 3,
   });
+  // שמות השכבות כתובים עם מקף (layer-dragon-head), והשיקוי צובע את הדרקון ומוסיף לו כוח (dragon-power)
+  const layerOf = (id) => (id === 'dragon_skin' ? 'dragon-power' : `layer-${id.replace('_', '-')}`);
   for (const slot of SLOTS) {
-    check(`שכבת ${slot.id} מצוירת`, full.includes(`layer-${slot.id}`));
+    check(`שכבת ${slot.id} מצוירת`, full.includes(layerOf(slot.id)));
   }
 
   // באותו דף מצוירים כמה SVG יחד. מזהים כפולים גורמים לדפדפן לקשר את כולם
@@ -103,18 +105,25 @@ const { CATALOG, SLOTS, TIERS } = mods.shop;
 /* ---------- מפלצות ---------- */
 {
   const { MONSTERS, randomMonster } = mods.monsters;
-  check('יש לפחות 5 מפלצות', MONSTERS.length >= 5);
+  check('יש לפחות 5 מפלצות רגילות', MONSTERS.filter((m) => !m.boss).length >= 5);
+  check('יש 3 בוסים', MONSTERS.filter((m) => m.boss).length === 3);
   check('לכל מפלצת שם וציור', MONSTERS.every((m) => m.name && m.art().includes('<svg')));
+  check('לכל מפלצת ציור בכל מצבי הרוח', MONSTERS.every((m) => [0, 1, 2, 3].every((mood) => m.art(mood).includes(`mood-${mood}`))));
   check('בחירת מפלצת אקראית עובדת', Boolean(randomMonster().name));
+  const picks = Array.from({ length: 400 }, () => randomMonster());
+  check('בוסים מופיעים לפעמים, אבל לא ברוב הקרבות',
+    picks.some((m) => m.boss) && picks.filter((m) => m.boss).length < 200, `${picks.filter((m) => m.boss).length}/400`);
 }
 
 /* ---------- דרגות והתקדמות ---------- */
 {
   const { RANKS, rankFor, nextRankFor, dragonStageFor, rankIndexFor } = mods.progress;
-  check('חמש דרגות בעברית', RANKS.length === 5 && RANKS.map((r) => r.name).join(',') === 'טירון,לוחם,אביר,אלוף,אגדה');
+  check('שמונה דרגות בעברית', RANKS.length === 8
+    && RANKS.map((r) => r.name).join(',') === 'טירון,לוחם,אביר,אלוף,אגדה,מיתוס,אדון הדרקונים,קיסר הנצח');
   check('דרגה מתחילה בטירון', rankFor(0).name === 'טירון');
-  check('דרגה עולה לפי ניסיון', rankFor(500).name === 'אביר' && rankFor(99999).name === 'אגדה');
-  check('אין דרגה אחרי אגדה', nextRankFor(99999) === null);
+  check('דרגה עולה לפי ניסיון', rankFor(500).name === 'אביר' && rankFor(2000).name === 'אגדה' && rankFor(99999).name === 'קיסר הנצח');
+  check('יש דרגות מעל אגדה', nextRankFor(2000)?.name === 'מיתוס');
+  check('אין דרגה אחרי קיסר הנצח', nextRankFor(99999) === null);
   check('שלב הדרקון גדל עם הדרגה', dragonStageFor(0) === 0 && dragonStageFor(500) === 2 && dragonStageFor(99999) === 3);
   check('סדר הדרגות עולה', RANKS.every((r, i) => i === 0 || r.xp > RANKS[i - 1].xp));
   check('חישוב אינדקס דרגה', rankIndexFor(119) === 0 && rankIndexFor(120) === 1);
@@ -147,8 +156,17 @@ const { CATALOG, SLOTS, TIERS } = mods.shop;
   shop.equip('helmet', 'h_wing');
   check('אי אפשר להצטייד בפריט שלא נקנה', shop.equipped().helmet === null);
 
-  storage.update((s) => { s.player.xp = 2000; s.player.coins = 5000; });
-  check('בדרגת אגדה נפתחים כל הפריטים', CATALOG.filter((i) => !shop.owns(i.id)).every((i) => shop.canBuy(i.id).ok));
+  storage.update((s) => { s.player.xp = 2000; s.player.coins = 50000; });
+  check('בדרגת אגדה פריטי עד אגדה פתוחים', CATALOG.filter((i) => !shop.owns(i.id) && i.minRank <= 4).every((i) => shop.canBuy(i.id).ok));
+  check('בדרגת אגדה הפריטים המיתיים עדיין נעולים', CATALOG.filter((i) => i.minRank > 4).every((i) => !shop.canBuy(i.id).ok));
+
+  const { RANKS } = mods.progress;
+  storage.update((s) => { s.player.xp = RANKS[RANKS.length - 1].xp; });
+  check('בדרגה העליונה נפתחים כל הפריטים', CATALOG.filter((i) => !shop.owns(i.id)).every((i) => shop.canBuy(i.id).ok));
+  check('לכל דרגת על יש פריטים משלה', [5, 6, 7].every((r) => CATALOG.some((i) => i.minRank === r)));
+  check('כל פריט דורש דרגה קיימת', CATALOG.every((i) => i.minRank >= 0 && i.minRank < RANKS.length));
+  check('יש אפודים וקסדות אביר מלאות',
+    CATALOG.filter((i) => i.id.startsWith('a_vest')).length >= 5 && CATALOG.filter((i) => i.id.startsWith('h_knight')).length >= 5);
 }
 
 /* ---------- התקדמות: מטבעות, ניסיון, רצף וסטטיסטיקה ---------- */

@@ -48,6 +48,44 @@ function face(mood, f) {
   return `<g class="face">${brows}${eye(l)}${eye(r)}${mouth}${sweat}</g>`;
 }
 
+/**
+ * דרקון מרושע - הבסיס לשלושת הבוסים.
+ * p: { body, belly, dark, wing, horn, pupil, ink, extraBack, extraFront }
+ */
+function evilDragon(mood, p) {
+  const wing = 'M72 100L18 30Q30 58 12 70Q34 76 22 98Q44 98 40 120Q58 110 74 120z';
+  const ribs = 'M72 100L18 30M72 102L12 70M72 106L22 98M72 112L40 120';
+  return svg(`
+    <ellipse cx="100" cy="170" rx="62" ry="8" fill="rgba(0,0,0,.35)"/>
+    ${p.extraBack || ''}
+    <g>
+      <path d="${wing}" fill="${p.wing}"/>
+      <path d="${ribs}" stroke="${p.dark}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(200 0) scale(-1 1)">
+      <path d="${wing}" fill="${p.wing}"/>
+      <path d="${ribs}" stroke="${p.dark}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <path d="M130 150c24 12 44 6 50-14" stroke="${p.body}" stroke-width="11" fill="none" stroke-linecap="round"/>
+    <path d="M174 140l16-14-2 20z" fill="${p.dark}"/>
+    <ellipse cx="100" cy="134" rx="40" ry="32" fill="${p.body}"/>
+    <ellipse cx="100" cy="142" rx="23" ry="22" fill="${p.belly}"/>
+    <path d="M84 134h32M82 144h36M84 154h32" stroke="${p.dark}" stroke-width="2" opacity=".35"/>
+    <ellipse cx="76" cy="162" rx="13" ry="8" fill="${p.dark}"/>
+    <ellipse cx="124" cy="162" rx="13" ry="8" fill="${p.dark}"/>
+    <path d="M66 166l3-6 3 6zM74 167l3-6 3 6zM120 167l3-6 3 6zM128 166l3-6 3 6z" fill="#f2ead8"/>
+    <path d="M76 58C70 40 60 30 48 24c6 12 8 22 10 36zM124 58c6-18 16-28 28-34-6 12-8 22-10 36z" fill="${p.horn}"/>
+    <path d="M90 52l5-14 5 12 5-12 5 14z" fill="${p.dark}"/>
+    <ellipse cx="100" cy="80" rx="38" ry="31" fill="${p.body}"/>
+    <ellipse cx="100" cy="100" rx="22" ry="13" fill="${p.belly}"/>
+    <circle cx="93" cy="96" r="2" fill="${p.dark}"/>
+    <circle cx="107" cy="96" r="2" fill="${p.dark}"/>
+    ${face(mood, { l: 86, r: 114, y: 76, er: 8, pupil: p.pupil, mx: 100, my: 104, mw: 11, ink: p.ink, sx: 136, sy: 52 })}
+    <path d="M92 101l3 7 3-7zM102 101l3 7 3-7z" fill="#fff"/>
+    ${p.extraFront || ''}
+  `, mood);
+}
+
 export const MONSTERS = [
   {
     id: 'stone_golem',
@@ -111,7 +149,46 @@ export const MONSTERS = [
       ${face(mood, { l: 84, r: 108, y: 116, er: 8, pupil: '#5a3512', mx: 96, my: 136, mw: 14, ink: '#a96f28', sx: 120, sy: 96 })}
     `, mood),
   },
+
+  // --- בוסים: דרקונים מרושעים. מופיעים מדי פעם במקום מפלצת רגילה ---
+  {
+    id: 'lava_dragon',
+    name: 'דרקון הלבה',
+    boss: true,
+    art: (mood = 0) => evilDragon(mood, {
+      body: '#c0392b', belly: '#ffb347', dark: '#5c120a', wing: '#8e1e12', horn: '#2b0a05',
+      pupil: '#ffcc4d', ink: '#3d0b05',
+      extraBack: '<path d="M30 168c4-10 2-18-4-24 10 2 16 12 14 24zM164 168c4-10 2-18-4-24 10 2 16 12 14 24z" fill="#ff8a3d" opacity=".85"/>',
+      extraFront: '<path d="M84 128l4 10-4 6M118 126l-3 10 4 8" stroke="#ffcc4d" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
+    }),
+  },
+  {
+    id: 'shadow_dragon',
+    name: 'דרקון הצללים',
+    boss: true,
+    art: (mood = 0) => evilDragon(mood, {
+      body: '#3b2a5e', belly: '#6d5a9e', dark: '#150d2e', wing: '#241840', horn: '#c9d3dd',
+      pupil: '#ff3b3b', ink: '#0d0820',
+      extraBack: '<circle cx="34" cy="150" r="10" fill="#5b3a9c" opacity=".4"/><circle cx="168" cy="40" r="12" fill="#5b3a9c" opacity=".35"/>',
+      extraFront: '<path d="M78 120l6 4M122 120l-6 4" stroke="#b57bff" stroke-width="2.5" stroke-linecap="round"/>',
+    }),
+  },
+  {
+    id: 'venom_dragon',
+    name: 'דרקון הרעל',
+    boss: true,
+    art: (mood = 0) => evilDragon(mood, {
+      body: '#3f8f2a', belly: '#c8f26a', dark: '#163d0e', wing: '#2a6b1c', horn: '#e8e2c4',
+      pupil: '#ff9d1a', ink: '#0f2a08',
+      extraFront: `
+        <path d="M95 110c0 5-2 8-2 10a2 2 0 0 0 4 0c0-2-2-5-2-10z" fill="#9dff3a"/>
+        <circle cx="64" cy="118" r="3" fill="#9dff3a" opacity=".8"/><circle cx="140" cy="112" r="2.4" fill="#9dff3a" opacity=".8"/>`,
+    }),
+  },
 ];
+
+/** כמה פעמים (בערך) מופיע בוס במקום מפלצת רגילה */
+export const BOSS_CHANCE = 0.25;
 
 /** מצב הרוח לפי הנזק שספגה המפלצת: ככל שהלוחם מצליח יותר - היא מפחדת יותר */
 export function moodFor(hp, maxHp) {
@@ -122,6 +199,10 @@ export function moodFor(hp, maxHp) {
   return 3;
 }
 
+/** מפלצת לקרב: לרוב מפלצת רגילה, ולפעמים בוס */
 export function randomMonster() {
-  return MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
+  const bosses = MONSTERS.filter((m) => m.boss);
+  const regular = MONSTERS.filter((m) => !m.boss);
+  const pool = bosses.length && Math.random() < BOSS_CHANCE ? bosses : regular;
+  return pool[Math.floor(Math.random() * pool.length)];
 }

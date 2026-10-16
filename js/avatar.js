@@ -43,7 +43,30 @@ export const COLOR_CHOICES = [
 /* ============================ שכבות ציוד ============================ */
 // כל פונקציה מחזירה מחרוזת SVG. c = צבע הבסיס של השחקן.
 
+/**
+ * קסדת אביר מלאה: מכסה את כל הראש, ורק העיניים נוצצות מתוך חריץ המצחייה.
+ * top - קישוט מאחורי הקסדה (נוצה, קרניים), front - קישוט מעליה (אבנים, סמלים).
+ */
+function knightHelm({ shell, light, dark, slit = '#140f24', glint = '#fff', top = '', front = '' }) {
+  const holes = [88, 94, 100, 124, 130, 136]
+    .map((x) => `<circle cx="${x}" cy="116" r="1.8"/><circle cx="${x}" cy="123" r="1.8"/>`).join('');
+  return `
+    <g class="layer-helmet">
+      ${top}
+      <path d="M112 44c-26 0-44 16-44 38v30c0 14 10 24 22 28h44c12-4 22-14 22-28V82c0-22-18-38-44-38z" fill="${shell}"/>
+      <path d="M112 44c-26 0-44 16-44 38v30c0 14 10 24 22 28h8c-10-6-16-16-16-28V84c0-20 12-34 30-40z" fill="${light}"/>
+      <path d="M112 46v92" stroke="${dark}" stroke-width="3" opacity=".55"/>
+      <rect x="66" y="76" width="92" height="9" rx="4.5" fill="${dark}"/>
+      <rect x="78" y="88" width="68" height="11" rx="5" fill="${slit}"/>
+      <circle cx="99" cy="93.5" r="2.3" fill="${glint}"/>
+      <circle cx="125" cy="93.5" r="2.3" fill="${glint}"/>
+      <g fill="${dark}" opacity=".8">${holes}</g>
+      ${front}
+    </g>`;
+}
+
 // הקסדה יושבת מעל גובה העיניים, ומגני הלחיים יורדים רק בצדדים - כדי שהפנים יישארו גלויות
+// (חוץ מקסדות האביר המלאות - h_knight*)
 const HELMETS = {
   h_iron: () => `
     <g class="layer-helmet">
@@ -120,6 +143,45 @@ const HELMETS = {
       <circle cx="120" cy="68" r="1.6" fill="#fff"/>
       <circle cx="100" cy="72" r="1.4" fill="#ffe08a"/>
     </g>`,
+
+  h_knight: () => knightHelm({ shell: '#a9b4c0', light: '#d5dde6', dark: '#6f7b88' }),
+  h_knight_plume: (c) => knightHelm({
+    shell: '#b9c4d0', light: '#e2e9f1', dark: '#7b8794',
+    top: `
+      <path d="M112 48c-4-18 6-34 32-40-8 10-9 18-5 27-11 2-19 7-27 13z" fill="${c}"/>
+      <path d="M114 44c3-13 12-24 26-30-6 9-7 15-5 21" stroke="${shade(c, 0.45)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <rect x="105" y="38" width="14" height="10" rx="3" fill="#ffcc4d"/>`,
+  }),
+  h_knight_gold: () => knightHelm({
+    shell: '#e0a213', light: '#ffe08a', dark: '#a87708', slit: '#3a2606',
+    top: '<path d="M84 54l6-16 9 10 13-18 13 18 9-10 6 16z" fill="#ffcc4d"/>',
+    front: '<circle cx="112" cy="64" r="5.5" fill="#ff6b6b"/><circle cx="110.5" cy="62.5" r="1.6" fill="#fff"/>',
+  }),
+  h_knight_dragon: () => knightHelm({
+    shell: '#7a1d1d', light: '#b83a2a', dark: '#3f0c0c', glint: '#ffcc4d',
+    top: `
+      <path d="M74 70c-14-8-22-22-20-38 6 11 14 17 27 21z" fill="#f0e6d2"/>
+      <path d="M150 70c14-8 22-22 20-38-6 11-14 17-27 21z" fill="#f0e6d2"/>
+      <path d="M98 50l4-20 7 11 3-19 3 19 7-11 4 20z" fill="#ffcc4d"/>`,
+    front: '<path d="M112 56l7 8-7 9-7-9z" fill="#ffcc4d"/>',
+  }),
+  h_knight_shadow: () => knightHelm({
+    shell: '#2a1f45', light: '#4b3a72', dark: '#120c22', slit: '#0a0614', glint: '#d9b8ff',
+    top: '<path d="M82 58l-10-24 18 14zM142 58l10-24-18 14zM104 46l8-28 8 28z" fill="#4b3a72"/>',
+    front: `
+      <rect x="78" y="88" width="68" height="11" rx="5" fill="none" stroke="#9b6bf0" stroke-width="1.6"/>
+      <path d="M112 58l4 6-4 6-4-6z" fill="#c79bff"/>`,
+  }),
+  h_knight_emperor: () => knightHelm({
+    shell: '#eef2ff', light: '#ffffff', dark: '#c9a227', slit: '#1f2a6b', glint: '#9fe3ff',
+    top: `
+      <path d="M112 46c-6-20 2-36 22-44-5 11-4 19 1 26-10 3-17 9-23 18z" fill="#d23c3c"/>
+      <path d="M82 54l7-20 10 12 13-22 13 22 10-12 7 20z" fill="#ffcc4d"/>
+      <circle cx="89" cy="36" r="3" fill="#59a9ff"/><circle cx="112" cy="26" r="3.5" fill="#ff6b6b"/><circle cx="135" cy="36" r="3" fill="#4ddb8b"/>`,
+    front: `
+      <path d="M110 104h4v26h-4zM102 110h20v4h-20z" fill="#ffcc4d"/>
+      <circle cx="112" cy="64" r="5" fill="#b57bff"/><circle cx="110.5" cy="62.5" r="1.5" fill="#fff"/>`,
+  }),
 };
 
 // כל השריונות בנויים על אותו קו מתאר, שעוטף בדיוק את הטוניקה של הגוף (baseBody)
@@ -128,6 +190,34 @@ const HELMETS = {
 const ARMOR_TORSO = 'M112 131c-20 0-33 6-38 18l-7 33h90l-7-33c-5-12-18-18-38-18z';
 const ARMOR_TORSO_LIGHT = 'M112 131c-20 0-33 6-38 18l-7 33h14l6-30c3-11 12-19 25-21z';
 const ARMOR_SKIRT = 'M68 182h88l2 12c2 11-5 19-16 19H82c-11 0-18-8-16-19z';
+
+// אפוד: שני חלקים קדמיים בלי שרוולים ובלי חצאית. במרכז נשאר פתח בצורת V,
+// כך שרואים את הטוניקה מתחת, והחגורה נשארת גלויה.
+const VEST_LEFT = 'M104 132c-15 1-26 8-30 17l-7 33h43v-26z';
+const VEST_RIGHT = 'M120 132c15 1 26 8 30 17l7 33h-43v-26z';
+const VEST_LEFT_LIGHT = 'M104 132c-15 1-26 8-30 17l-7 33h12l6-30c3-10 9-16 19-20z';
+const VEST_EDGES = 'M104 133l6 23v26M120 133l-6 23v26';
+
+function vest(fill, light, inner = '', edge = '') {
+  return `
+    <g class="layer-armor">
+      <path d="${VEST_LEFT}" fill="${fill}"/>
+      <path d="${VEST_RIGHT}" fill="${fill}"/>
+      <path d="${VEST_LEFT_LIGHT}" fill="${light}"/>
+      ${edge ? `<path d="${VEST_EDGES}" stroke="${edge}" stroke-width="3" fill="none" stroke-linejoin="round"/>` : ''}
+      ${inner}
+    </g>`;
+}
+
+/** תבנית חוזרת (טבעות, קשקשים) רק בתוך שני חלקי האפוד */
+function vestPattern(draw) {
+  const out = [];
+  for (let y = 148; y <= 176; y += 7) {
+    for (let x = 80; x <= 102; x += 7) out.push(draw(x, y));
+    for (let x = 122; x <= 144; x += 7) out.push(draw(x, y));
+  }
+  return out.join('');
+}
 
 const ARMORS = {
   a_leather: () => `
@@ -191,6 +281,42 @@ const ARMORS = {
       <circle cx="112" cy="150" r="11" fill="#ffcc4d"/>
       <path d="M112 142c4 4 7 5 9 4-2 4-2 7 0 10-4 1-7 4-9 7-2-3-5-6-9-7 2-3 2-6 0-10 2 1 5 0 9-4z" fill="#7a1d1d"/>
     </g>`,
+
+  a_vest_leather: () => vest('#9a6a3c', '#b98a55', `
+      <path d="M103 137l6 23v19M121 137l-6 23v19" stroke="#e8c27a" stroke-width="1.6" stroke-dasharray="3 3" fill="none"/>
+      <path d="M106 141l12 4M107 147l10 4M108 153l8 3" stroke="#5c3a1c" stroke-width="2" stroke-linecap="round"/>
+      <rect x="80" y="162" width="18" height="12" rx="3" fill="#7a5230"/>
+      <rect x="126" y="162" width="18" height="12" rx="3" fill="#7a5230"/>`),
+  a_vest_chain: () => vest('#7b8794', '#9aa5b1',
+    vestPattern((x, y) => `<circle cx="${x}" cy="${y}" r="2.7" fill="none" stroke="#d5dde6" stroke-width="1.2"/>`),
+    '#5c3a1c'),
+  a_vest_knight: (c) => `
+    <g class="layer-armor">
+      <path d="M112 131c-20 0-33 6-38 18l-7 33 3 24 42 8 42-8 3-24-7-33c-5-12-18-18-38-18z" fill="${shade(c, -0.25)}"/>
+      <path d="M112 131c-20 0-33 6-38 18l-7 33 3 24 12 2-1-55c2-12 14-20 31-22z" fill="${shade(c, 0.12)}"/>
+      <path d="M112 131c-20 0-33 6-38 18l-7 33 3 24 42 8 42-8 3-24-7-33c-5-12-18-18-38-18z" fill="none" stroke="#ffcc4d" stroke-width="2.5"/>
+      <rect x="70" y="182" width="84" height="9" rx="4" fill="#4a3826"/>
+      <rect x="104" y="180" width="16" height="13" rx="3" fill="#ffcc4d"/>
+      <path d="M112 139c8 0 13 2 13 2v11c0 9-7 13-13 16-6-3-13-7-13-16v-11s5-2 13-2z" fill="#f2f5ff"/>
+      <path d="M110 143h4v20h-4zM104 150h16v4h-16z" fill="#d23c3c"/>
+    </g>`,
+  a_vest_royal: () => vest('#5b2a8c', '#7b45d6', `
+      <path d="M103 134l6 23v24M121 134l-6 23v24" stroke="#fff" stroke-width="5" fill="none"/>
+      <circle cx="104" cy="142" r="1.2" fill="#222"/><circle cx="107" cy="154" r="1.2" fill="#222"/><circle cx="108" cy="168" r="1.2" fill="#222"/>
+      <circle cx="120" cy="142" r="1.2" fill="#222"/><circle cx="117" cy="154" r="1.2" fill="#222"/><circle cx="116" cy="168" r="1.2" fill="#222"/>
+      <path d="${VEST_LEFT}${VEST_RIGHT}" fill="none" stroke="#ffcc4d" stroke-width="2"/>
+      <circle cx="96" cy="162" r="3" fill="#ffcc4d"/><circle cx="96" cy="172" r="3" fill="#ffcc4d"/>
+      <circle cx="128" cy="162" r="3" fill="#ffcc4d"/><circle cx="128" cy="172" r="3" fill="#ffcc4d"/>`),
+  a_vest_shadow: () => vest('#1e1633', '#33265a', `
+      <path d="M80 150l6 6-6 6 6 6M144 150l-6 6 6 6-6 6" stroke="#9b6bf0" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="92" cy="146" r="2" fill="#c79bff"/><circle cx="132" cy="146" r="2" fill="#c79bff"/>
+      <rect x="104" y="158" width="16" height="4" rx="2" fill="#c9d3dd"/>
+      <rect x="104" y="168" width="16" height="4" rx="2" fill="#c9d3dd"/>`, '#4b2a8c'),
+  a_vest_dragon: () => vest('#24202e', '#3a3448',
+    vestPattern((x, y) => `<path d="M${x - 3.5} ${y}a3.5 3.5 0 0 1 7 0c0 3-3.5 5-3.5 5s-3.5-2-3.5-5z" fill="#3d3a4a" stroke="#c0392b" stroke-width="1.1"/>`)
+    + `<rect x="102" y="156" width="20" height="8" rx="3" fill="#ffcc4d"/>
+       <circle cx="112" cy="160" r="4" fill="#ff3b3b"/><circle cx="111" cy="159" r="1.2" fill="#fff"/>`,
+    '#c0392b'),
 };
 
 const WEAPONS = {
@@ -273,6 +399,26 @@ const WEAPONS = {
       <rect x="48" y="176" width="9" height="20" rx="4" fill="#1f2a6b"/>
       <path d="M52.5 194l3 6.5 7 .6-5.3 4.6 1.6 6.8-6.3-3.8-6.3 3.8 1.6-6.8-5.3-4.6 7-.6z" fill="#ffe08a"/>
     </g>`,
+  w_dragonfang: () => `
+    <g class="layer-weapon">
+      <path d="M47 62c18 22 20 62 11 108h-11c4-36 4-72 0-108z" fill="#f3ead2"/>
+      <path d="M47 62c18 22 20 62 11 108h-4c7-42 5-78-7-108z" fill="#d6c7a0"/>
+      <path d="M50 100l5 3M51 124l5 3M51 148l5 3" stroke="#b8a77a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M28 166c10-8 18-6 24 0 6-6 14-8 24 0l-6 11H34z" fill="#7a1d1d"/>
+      <rect x="48" y="177" width="9" height="20" rx="4" fill="#3a1010"/>
+      <circle cx="52.5" cy="202" r="7.5" fill="#7a1d1d"/>
+      <circle cx="52.5" cy="202" r="4" fill="#ff3b3b"/>
+    </g>`,
+  w_eternal: () => `
+    <g class="layer-weapon">
+      <path d="M52.5 56l9 18-3 94h-12l-3-94z" fill="#9fe3ff"/>
+      <path d="M52.5 64l5 12-2 88h-6l-2-88z" fill="#f2fdff"/>
+      <path d="M26 164c8-10 18-8 26 0 8-8 18-10 26 0l-8 10H34z" fill="#ffcc4d"/>
+      <rect x="48" y="174" width="9" height="22" rx="4" fill="#5b2a8c"/>
+      <circle cx="52.5" cy="202" r="8" fill="#ffcc4d"/>
+      <circle cx="52.5" cy="202" r="4.5" fill="#b57bff"/>
+      ${starPath(36, 92, 2.4, '#fff')}${starPath(70, 118, 2, '#e8f9ff')}${starPath(38, 140, 1.6, '#fff')}
+    </g>`,
 };
 
 const SHIELDS = {
@@ -321,6 +467,14 @@ const SHIELDS = {
       <path d="M170 126l18 10v24l-18 20-18-20v-24z" fill="#d8f6ff" opacity=".85"/>
       <path d="M170 126v54M152 136l36 24M188 136l-36 24" stroke="#5ab8e0" stroke-width="2" opacity=".7"/>
       <circle cx="162" cy="134" r="2.4" fill="#fff"/>
+    </g>`,
+  s_dragonlord: () => `
+    <g class="layer-shield">
+      <path d="M170 110c17 0 31 5 31 5v37c0 26-17 40-31 47-14-7-31-21-31-47v-37s14-5 31-5z" fill="#ffcc4d"/>
+      <path d="M170 116c13 0 25 4 25 4v32c0 21-13 33-25 39-12-6-25-18-25-39v-32s12-4 25-4z" fill="#2a1414"/>
+      <path d="M170 128c-14 2-20 12-20 12 8-2 12 0 14 4-6 4-8 10-6 16 4-6 8-8 12-8s8 2 12 8c2-6 0-12-6-16 2-4 6-6 14-4 0 0-6-10-20-12z" fill="#c0392b"/>
+      <path d="M163 128l-5-10 8 6zM177 128l5-10-8 6z" fill="#ffcc4d"/>
+      <circle cx="165" cy="140" r="1.8" fill="#ffcc4d"/><circle cx="175" cy="140" r="1.8" fill="#ffcc4d"/>
     </g>`,
 };
 
@@ -380,6 +534,14 @@ const CAPES = {
       <path d="M52 238c4-16 2-30-6-40 16 6 24 22 20 40zM78 244c4-16 2-30-6-40 16 6 24 22 20 40zM106 246c4-16 2-30-6-40 16 6 24 22 20 40zM134 244c4-16 2-30-6-40 16 6 24 22 20 40zM160 238c4-16 2-30-6-40 16 6 24 22 20 40z" fill="#ffcc4d"/>
       <path d="M86 150c10 6 18 6 26 0 8 6 16 6 26 0" stroke="#ffcc4d" stroke-width="3" fill="none" stroke-linecap="round"/>
     </g>`,
+  // גלימה בצורת כנפי דרקון: התחתית מחורצת, ו"עצמות" הכנף יוצאות מהכתפיים
+  c_dragonwing: () => `
+    <g class="layer-cape">
+      <path d="M86 130C62 150 48 200 52 238Q67 222 82 244Q97 228 112 248Q127 228 142 244Q157 222 172 238C176 200 162 150 138 130c-14 10-38 10-52 0z" fill="#5a1414"/>
+      <path d="M86 130c-16 30-24 76-22 112 5-6 11-6 18 2-9-38-6-84 4-114z" fill="#7a1d1d"/>
+      <path d="M88 134L56 234M98 136L84 242M126 136L140 242M136 134L168 234" stroke="#2a0808" stroke-width="3" stroke-linecap="round"/>
+      <path d="M86 130c14 10 38 10 52 0" stroke="#ffcc4d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`,
 };
 
 const AURAS = {
@@ -436,6 +598,14 @@ const AURAS = {
       ${[[22, 120, 5], [204, 150, 6], [112, 30, 7], [40, 238, 4], [190, 244, 5], [30, 180, 3], [196, 88, 4]]
     .map(([x, y, r]) => starPath(x, y, r, '#fff3c4')).join('')}
     </g>`,
+  au_eternal: (c, uid) => `
+    <g class="layer-aura" opacity="0.95">
+      <ellipse cx="112" cy="170" rx="108" ry="130" fill="url(#auraEternal-${uid})"/>
+      <ellipse cx="112" cy="170" rx="104" ry="40" fill="none" stroke="#ffcc4d" stroke-opacity=".6" stroke-width="3" transform="rotate(-24 112 170)"/>
+      <ellipse cx="112" cy="170" rx="104" ry="40" fill="none" stroke="#9fe3ff" stroke-opacity=".6" stroke-width="3" transform="rotate(24 112 170)"/>
+      ${[[18, 110, 5], [206, 120, 6], [112, 26, 7], [36, 250, 5], [192, 250, 5], [196, 70, 3.5], [24, 190, 3.5]]
+    .map(([x, y, r], i) => starPath(x, y, r, i % 2 ? '#e8f9ff' : '#fff3c4')).join('')}
+    </g>`,
 };
 
 /* ============================ אביזרים לדרקון ============================ */
@@ -475,6 +645,16 @@ const DRAGON_HEADS = {
       <ellipse cx="192" cy="206" rx="17" ry="4" fill="#5b2a8c"/>
       <path d="M193 186l1.5 3.5 3.5.5-2.6 2.4.7 3.6-3.1-1.8-3.1 1.8.7-3.6-2.6-2.4 3.5-.5z" fill="#ffcc4d"/>
       <circle cx="187" cy="198" r="1.3" fill="#ffe08a"/>
+    </g>`,
+  dh_emperor: () => `
+    <g class="layer-dragon-head">
+      <path d="M180 203c0-11 6-17 12-17s12 6 12 17z" fill="#c62828"/>
+      <path d="M180 203q12-26 24 0M192 186v17" stroke="#ffcc4d" stroke-width="2.4" fill="none"/>
+      <path d="M190.5 176h3v8h-3zM188 179h8v3h-8z" fill="#ffcc4d"/>
+      <rect x="177" y="201" width="30" height="7" rx="3" fill="#ffcc4d"/>
+      <circle cx="184" cy="204.5" r="1.8" fill="#59a9ff"/>
+      <circle cx="192" cy="204.5" r="2.2" fill="#ff3b3b"/>
+      <circle cx="200" cy="204.5" r="1.8" fill="#4ddb8b"/>
     </g>`,
 };
 
@@ -563,6 +743,14 @@ const DRAGON_SKINS = {
       <circle cx="198.5" cy="218" r="2.4" fill="#e0b3ff"/>`,
     symbol: '<path d="M34 42a11 11 0 1 0 6 19 9 9 0 1 1-6-19z" fill="#f2e6ff"/>',
   },
+  p_cosmic: {
+    liquid: '#3a2a9c', body: '#2b2f7a', belly: '#a9b8ff', dark: '#11143d',
+    mark: starPath(0, 0, 1.6, '#ffffff') + '<circle cx="4" cy="4" r="1" fill="#9fe3ff"/>',
+    power: starPath(168, 208, 3, '#fff3c4') + starPath(226, 200, 2.6, '#e8f9ff')
+      + '<circle cx="230" cy="250" r="5" fill="#ff9d5c"/><ellipse cx="230" cy="250" rx="9" ry="2.5" fill="none" stroke="#ffe08a" stroke-width="1.4"/>',
+    symbol: '<circle cx="30" cy="52" r="6" fill="#ff9d5c"/><ellipse cx="30" cy="52" rx="11" ry="3" fill="none" stroke="#ffe08a" stroke-width="1.6"/>'
+      + starPath(20, 42, 1.6, '#fff') + starPath(40, 60, 1.4, '#fff'),
+  },
 };
 
 /** ציור הבקבוק לחנות ולחדר הנשק */
@@ -609,11 +797,14 @@ const ITEM_VIEWBOX = {
 let svgSeq = 0;
 const nextUid = () => `dw${++svgSeq}`;
 
+/** קסדות האביר המלאות גבוהות יותר (נוצה למעלה, סנטר למטה) ולכן צריכות מסגרת משלהן */
+const KNIGHT_HELM_VIEWBOX = '36 2 152 142';
+
 /** ציור פריט בודד (לשימוש בחנות ובחדר הנשק) */
 export function itemArt(slot, id, color = '#59a9ff') {
   const set = SLOT_SETS[slot];
   if (!set || !set[id]) return '';
-  const box = ITEM_VIEWBOX[slot] || '0 0 240 300';
+  const box = (id.startsWith('h_knight') ? KNIGHT_HELM_VIEWBOX : ITEM_VIEWBOX[slot]) || '0 0 240 300';
   const uid = nextUid();
   return `<svg viewBox="${box}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${defs(color, uid)}${set[id](color, uid)}</svg>`;
 }
@@ -710,7 +901,8 @@ function defs(c, uid) {
         <stop offset="100%" stop-color="${shade(c, -0.22)}"/>
       </linearGradient>
       ${[['auraFire', '#ff9d3d', '#ffdf8a'], ['auraLeaf', '#4ddb8b', '#d6ffe8'],
-    ['auraIce', '#69c8ff', '#e8f9ff'], ['auraStorm', '#b57bff', '#ffe08a'], ['auraStar', '#ffcc4d', '#fff3c4']].map(([id, mid, out]) => `
+    ['auraIce', '#69c8ff', '#e8f9ff'], ['auraStorm', '#b57bff', '#ffe08a'], ['auraStar', '#ffcc4d', '#fff3c4'],
+    ['auraEternal', '#e0b3ff', '#9fe3ff']].map(([id, mid, out]) => `
       <radialGradient id="${id}-${uid}" cx="50%" cy="50%" r="50%">
         <stop offset="55%" stop-color="${mid}" stop-opacity="0"/>
         <stop offset="85%" stop-color="${mid}" stop-opacity=".45"/>

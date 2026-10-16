@@ -11,6 +11,10 @@ export const RANKS = [
   { id: 'knight', name: 'אביר', xp: 400 },
   { id: 'champion', name: 'אלוף', xp: 900 },
   { id: 'legend', name: 'אגדה', xp: 1800 },
+  // דרגות העל - אחרי אגדה. כל אחת פותחת ציוד "מיתי" בחנות
+  { id: 'mythic', name: 'מיתוס', xp: 3000 },
+  { id: 'dragonlord', name: 'אדון הדרקונים', xp: 4500 },
+  { id: 'eternal', name: 'קיסר הנצח', xp: 6500 },
 ];
 
 export function rankIndexFor(xp) {
@@ -43,6 +47,7 @@ export const REWARDS = {
   xpSecondTry: 6,
   xpEffort: 3,       // גם מי שטעה פעמיים מקבל נקודות על המאמץ
   perfectBonus: 15,
+  bossBonus: 20,     // ניצחון על בוס (דרקון מרושע)
   streakBonusPerDay: 3,
   streakBonusMax: 21,
 };
